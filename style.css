@@ -485,3 +485,7 @@ figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 8px; line-heig
 }
 .res-btn:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 .table-cap { color: var(--muted); font-size: 0.86rem !important; line-height: 1.5 !important; margin: 8px 0 0 !important; }
+.pub-side { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.pub-side .venue-tag { margin-top: 3px; }
+.pub-date { font-size: 0.8rem; color: var(--faint); font-variant-numeric: tabular-nums; padding-left: 2px; }
+@media (max-width: 560px) { .pub-side { flex-direction: row; align-items: center; gap: 10px; } }
