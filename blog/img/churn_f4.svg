@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 300" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="300" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">(a) Why the agent reads a file (5,801 reads)</text>
+<rect x="30.0" y="50" width="184.3" height="40" fill="#1a7f37" fill-opacity="0.85"/>
+<text x="122.2" y="76" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">25.6%</text>
+<text x="34.0" y="110" font-size="11" fill="#1f2328">First read</text>
+<rect x="214.3" y="50" width="254.2" height="40" fill="#b42318" fill-opacity="0.85"/>
+<text x="341.4" y="76" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">35.3%</text>
+<text x="218.3" y="110" font-size="11" fill="#1f2328">Re-read, still in context</text>
+<rect x="468.5" y="50" width="218.9" height="40" fill="#d97706" fill-opacity="0.85"/>
+<text x="577.9" y="76" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">30.4%</text>
+<text x="472.5" y="110" font-size="11" fill="#1f2328">Verify an edit</text>
+<rect x="687.4" y="50" width="62.6" height="40" fill="#7c3aed" fill-opacity="0.85"/>
+<text x="718.7" y="76" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">8.7%</text>
+<text x="691.4" y="110" font-size="11" fill="#1f2328" text-anchor="end" dx="62">After compaction</text>
+<text x="30" y="160" font-size="13" font-weight="700" fill="#1f2328">(b) What a compaction does next, judged by an LLM (124 compactions)</text>
+<rect x="30.0" y="180" width="517.0" height="40" fill="#b42318" fill-opacity="0.9"/>
+<text x="288.5" y="206" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">71.8%</text>
+<text x="34.0" y="240" font-size="11" fill="#1f2328">Recovery work</text>
+<rect x="547.0" y="180" width="168.5" height="40" fill="#f3c98b" fill-opacity="0.9"/>
+<text x="631.2" y="206" font-size="13" font-weight="700" fill="#1f2328" text-anchor="middle">23.4%</text>
+<text x="551.0" y="240" font-size="11" fill="#1f2328">Mixed</text>
+<rect x="715.4" y="180" width="23.0" height="40" fill="#d1d5db" fill-opacity="0.9"/>
+<text x="719.4" y="240" font-size="11" fill="#1f2328"></text>
+<rect x="738.5" y="180" width="11.5" height="40" fill="#1a7f37" fill-opacity="0.9"/>
+<path d="M744,226 L744,252" stroke="#1a7f37" stroke-width="1.2"/><text x="750" y="266" font-size="11" fill="#1a7f37" font-weight="600" text-anchor="end">1.6% continue efficiently &#183; 3.2% other</text>
+</svg>

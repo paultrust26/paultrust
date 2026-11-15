@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="400" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">(a) What the next user message does</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">504 transitions, labelled by an LLM</text>
+<text x="30" y="82" font-size="12" fill="#1f2328">Same topic</text><rect x="30" y="90" width="224" height="22" rx="4" fill="#0b5cad" fill-opacity="0.9"/><text x="262" y="106" font-size="12" font-weight="700" fill="#1f2328">32%</text>
+<text x="30" y="140" font-size="12" fill="#1f2328">Follow up question</text><rect x="30" y="148" width="203" height="22" rx="4" fill="#9cc0ea" fill-opacity="0.9"/><text x="241" y="164" font-size="12" font-weight="700" fill="#1f2328">29%</text>
+<text x="30" y="198" font-size="12" fill="#1f2328">Branch to a subtask</text><rect x="30" y="206" width="154" height="22" rx="4" fill="#1a7f37" fill-opacity="0.9"/><text x="192" y="222" font-size="12" font-weight="700" fill="#1f2328">22%</text>
+<text x="30" y="256" font-size="12" fill="#1f2328">Correction</text><rect x="30" y="264" width="98" height="22" rx="4" fill="#d97706" fill-opacity="0.9"/><text x="136" y="280" font-size="12" font-weight="700" fill="#1f2328">14%</text>
+<text x="30" y="314" font-size="12" fill="#1f2328">New unrelated task</text><rect x="30" y="322" width="11" height="22" rx="4" fill="#9aa1aa" fill-opacity="0.9"/><text x="49" y="338" font-size="12" font-weight="700" fill="#1f2328">1.6%</text>
+<text x="410" y="30" font-size="13" font-weight="700" fill="#1f2328">(b) Which transition follows which</text>
+<text x="410" y="48" font-size="11" fill="#6b7280">P(next | current); blank cells are below 0.10</text>
+<text x="512" y="104.0" font-size="11" fill="#1f2328" text-anchor="end">Same</text>
+<rect x="520" y="80" width="38" height="38" rx="3" fill="rgb(92,146,200)"/>
+<text x="539.0" y="104.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.30</text>
+<rect x="560" y="80" width="38" height="38" rx="3" fill="rgb(92,146,200)"/>
+<text x="579.0" y="104.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.30</text>
+<rect x="600" y="80" width="38" height="38" rx="3" fill="rgb(130,171,213)"/>
+<text x="619.0" y="104.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.23</text>
+<rect x="640" y="80" width="38" height="38" rx="3" fill="rgb(179,204,229)"/>
+<text x="659.0" y="104.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.14</text>
+<rect x="680" y="80" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="720" y="80" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="512" y="144.0" font-size="11" fill="#1f2328" text-anchor="end">Follow up</text>
+<rect x="520" y="120" width="38" height="38" rx="3" fill="rgb(81,139,196)"/>
+<text x="539.0" y="144.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.32</text>
+<rect x="560" y="120" width="38" height="38" rx="3" fill="rgb(59,124,189)"/>
+<text x="579.0" y="144.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.36</text>
+<rect x="600" y="120" width="38" height="38" rx="3" fill="rgb(179,204,229)"/>
+<text x="619.0" y="144.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.14</text>
+<rect x="640" y="120" width="38" height="38" rx="3" fill="rgb(179,204,229)"/>
+<text x="659.0" y="144.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.14</text>
+<rect x="680" y="120" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="720" y="120" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="512" y="184.0" font-size="11" fill="#1f2328" text-anchor="end">Branch</text>
+<rect x="520" y="160" width="38" height="38" rx="3" fill="rgb(65,128,191)"/>
+<text x="539.0" y="184.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.35</text>
+<rect x="560" y="160" width="38" height="38" rx="3" fill="rgb(119,164,209)"/>
+<text x="579.0" y="184.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.25</text>
+<rect x="600" y="160" width="38" height="38" rx="3" fill="rgb(157,189,222)"/>
+<text x="619.0" y="184.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.18</text>
+<rect x="640" y="160" width="38" height="38" rx="3" fill="rgb(162,193,224)"/>
+<text x="659.0" y="184.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.17</text>
+<rect x="680" y="160" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="720" y="160" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="512" y="224.0" font-size="11" fill="#1f2328" text-anchor="end">Correction</text>
+<rect x="520" y="200" width="38" height="38" rx="3" fill="rgb(124,168,211)"/>
+<text x="539.0" y="224.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.24</text>
+<rect x="560" y="200" width="38" height="38" rx="3" fill="rgb(114,160,207)"/>
+<text x="579.0" y="224.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.26</text>
+<rect x="600" y="200" width="38" height="38" rx="3" fill="rgb(130,171,213)"/>
+<text x="619.0" y="224.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.23</text>
+<rect x="640" y="200" width="38" height="38" rx="3" fill="rgb(119,164,209)"/>
+<text x="659.0" y="224.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.25</text>
+<rect x="680" y="200" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="720" y="200" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="512" y="264.0" font-size="11" fill="#1f2328" text-anchor="end">New task</text>
+<rect x="520" y="240" width="38" height="38" rx="3" fill="rgb(103,153,203)"/>
+<text x="539.0" y="264.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.28</text>
+<rect x="560" y="240" width="38" height="38" rx="3" fill="rgb(65,128,191)"/>
+<text x="579.0" y="264.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.35</text>
+<rect x="600" y="240" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="640" y="240" width="38" height="38" rx="3" fill="rgb(162,193,224)"/>
+<text x="659.0" y="264.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.17</text>
+<rect x="680" y="240" width="38" height="38" rx="3" fill="rgb(189,211,233)"/>
+<text x="699.0" y="264.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.12</text>
+<rect x="720" y="240" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="512" y="304.0" font-size="11" fill="#1f2328" text-anchor="end">Return</text>
+<rect x="520" y="280" width="38" height="38" rx="3" fill="rgb(11,92,173)"/>
+<text x="539.0" y="304.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.45</text>
+<rect x="560" y="280" width="38" height="38" rx="3" fill="rgb(179,204,229)"/>
+<text x="579.0" y="304.0" font-size="10.5" font-weight="600" fill="#1f2328" text-anchor="middle">0.14</text>
+<rect x="600" y="280" width="38" height="38" rx="3" fill="rgb(81,139,196)"/>
+<text x="619.0" y="304.0" font-size="10.5" font-weight="600" fill="#fff" text-anchor="middle">0.32</text>
+<rect x="640" y="280" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="680" y="280" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<rect x="720" y="280" width="38" height="38" rx="3" fill="#f7f8fa"/>
+<text x="540.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 540.0 330)">Same</text>
+<text x="580.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 580.0 330)">Follow up</text>
+<text x="620.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 620.0 330)">Branch</text>
+<text x="660.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 660.0 330)">Correction</text>
+<text x="700.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 700.0 330)">New task</text>
+<text x="740.0" y="330" font-size="10.5" fill="#1f2328" text-anchor="end" transform="rotate(-40 740.0 330)">Return</text>
+<text x="640" y="390" font-size="11.5" fill="#6b7280" text-anchor="middle">next transition</text>
+<text x="428" y="200" font-size="11.5" fill="#6b7280" text-anchor="middle" transform="rotate(-90 428 200)">current transition</text>
+</svg>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HazEP: Catching Agent Errors Before They Cascade | Paul Trust</title>
+<meta name="description" content="An online hazard model that predicts when an LLM agent error is about to cascade, and intervenes while the run is still recoverable.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">HazEP:</p>
+  <h1 class="main-title">Catching LLM agent errors before they cascade</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>July 2026</p></div>
+  </div>
+
+  <div class="res-links">
+    <a class="res-btn" target="_blank" rel="noopener" href="https://github.com/paultrust26/HazEP"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>When an LLM agent makes a mistake, the mistake rarely stays small: <strong>one wrong edit early in a run can waste dozens of later steps</strong> and still end in failure. Most methods only look at the run after it has failed.</p>
+    <p>HazEP watches the agent while it works. After every step it estimates a <strong>hazard</strong>, the risk that an error is about to cascade, and decides whether to <strong>continue, correct, escalate or stop</strong>, returning a short message to the agent before its next step.</p>
+    <p>A small hazard model that reads only the structure of each step, with no model call, <strong>ranks risky steps with a concordance index of 0.91</strong> on tasks it has never seen.</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Predict</p>
+      <p class="q">Is this run about to go wrong?</p>
+      <p class="src">Learned hazard model, 20 structural features, no model call</p>
+      <p class="big"><strong>0.91</strong>concordance index on 384 held out tasks</p>
+    </div>
+    <div class="hl">
+      <p class="label">Act</p>
+      <p class="q">What is the smallest useful intervention?</p>
+      <p class="src">Triage over the hazard and its recent trend</p>
+      <p class="big"><strong>4</strong>actions: continue, correct, escalate, terminate</p>
+    </div>
+  </div>
+
+  <p>Software engineering agents work in long loops: read a file, edit it, run the tests, repeat. When one of those decisions is wrong, for example an edit to the wrong module, the steps that follow tend to build on it. By the time the run fails, most of its budget has gone into the mistake.</p>
+  <p>Existing work mostly treats this as a diagnosis problem. Given a failed trajectory, find the step that caused the failure<a class="cite-ref" href="#ref-1">[1, 2, 3]</a> and then repair or replay it. That is valuable for understanding failures, but it pays for the whole failed run first and cannot interrupt a cascade while it is happening. HazEP asks a different, online question: <em>given the steps so far, is the run entering a cascade right now, and what should we say to the agent?</em></p>
+
+  <h2 class="sec">Hazard: an online view of failure</h2>
+  <p>HazEP borrows its central idea from survival analysis. A trajectory is a sequence of steps that may, at some point, cross into a state the agent cannot recover from. After step <em>t</em>, a monitor outputs a <strong>hazard</strong> &lambda;(<em>t</em>) between 0 and 1: the estimated risk that the run is entering a cascade at that step.</p>
+
+  <figure>
+    <img src="img/hazep_hazard.svg" alt="Three panel figure: the agent trajectory as coloured step cells, the hazard curve with dashed triage thresholds and the guidance point at step 5, and the four triage actions">
+    <figcaption><strong>Figure 1.</strong> An illustrative run. (a) The agent edits the wrong module at step 3, a test fails, and at step 5 it edits the same file again. (b) The hazard crosses the <em>correct</em> threshold at step 5, triage sends guidance, and the agent reads the trace, edits the right module and passes the tests; without intervention (dashed) the hazard keeps rising past <em>terminate</em>. (c) The four triage actions and when each applies.</figcaption>
+  </figure>
+
+  <p>Three ingredients turn this idea into a monitor:</p>
+  <ol class="list">
+    <li><strong>A step scorer</strong> that maps the trajectory so far to a hazard value.</li>
+    <li><strong>A triage rule</strong> that maps the hazard, and the shape of its recent history, to an action.</li>
+    <li><strong>Guidance</strong>: a short message for the agent that explains what looks wrong and what to try instead.</li>
+  </ol>
+
+  <p class="exp-label">Scoring</p>
+  <h3 class="exp">How is the hazard of a step estimated?</h3>
+  <p>HazEP supports several scorers behind one interface, so they can be compared directly:</p>
+  <ul class="list">
+    <li><strong>Learned hazard model.</strong> A gradient boosted regressor over 20 structural features of each step: its position in the step budget, the action type (edit, run, test, read or search), the lengths of the action and observation, whether the observation reports an error, a traceback or a passing test, how often recent actions repeat, how many files have been touched, and how many steps have passed since the last error. Every feature is available while the agent runs. The model is distilled from LLM judge labels, so at inference time it needs no model call at all.</li>
+    <li><strong>Rules.</strong> Five deterministic detectors for editing the wrong module, stagnation, regression, scope creep and token waste.</li>
+    <li><strong>LLM judge.</strong> A language model reads each step and returns a hazard and error labels.</li>
+    <li><strong>Composite.</strong> The judge and the rules combined by taking the larger hazard.</li>
+  </ul>
+
+  <p class="exp-label">Triage</p>
+  <h3 class="exp">What should happen when the hazard rises?</h3>
+  <p>The hazard is mapped to one of four actions. <strong>Continue</strong> leaves the agent alone. <strong>Correct</strong> sends a short message asking the agent to re check its last change or return to an earlier safe point. <strong>Escalate</strong> asks for a different strategy, or flags a hand off to a stronger model, when corrections have stopped working. <strong>Terminate</strong> recommends ending the run when no realistic recovery path remains or the budget is nearly spent.</p>
+  <p>Triage also reads the trend of the hazard. It classifies the recent curve as <em>linear</em>, <em>amplifying</em> or <em>damped</em>, estimates the probability that the run survives, and records the last safe checkpoint the agent could return to. HazEP only recommends: the agent framework decides whether to deliver the message or stop the run, which keeps the monitor independent of any particular agent.</p>
+
+  <h2 class="sec">Baselines</h2>
+  <p>HazEP is compared with methods that act after a failure, methods that act offline against a reference, and methods that act online during the run.</p>
+  <div class="table-wrap">
+    <table class="post-table">
+      <thead><tr><th>Method</th><th>When it acts</th><th>Idea</th></tr></thead>
+      <tbody>
+        <tr><td>REFLECT <a class="cite-ref" href="#ref-1">[1]</a></td><td>After failure</td><td>Attributes the error in a failed trace, supported by targeted interventions</td></tr>
+        <tr><td>AgenTracer <a class="cite-ref" href="#ref-2">[2]</a></td><td>After failure</td><td>Finds the failure inducing step by counterfactual replay</td></tr>
+        <tr><td>FALAT <a class="cite-ref" href="#ref-3">[3]</a></td><td>After failure</td><td>Traces the failure backward along step dependencies</td></tr>
+        <tr><td>STeCa <a class="cite-ref" href="#ref-4">[4]</a></td><td>Offline</td><td>Calibrates a trajectory step by step against a reference run</td></tr>
+        <tr><td>SWE-TRACE PRM <a class="cite-ref" href="#ref-5">[5]</a></td><td>Online</td><td>Rubric based process reward model that scores each step</td></tr>
+        <tr><td>Course correcting PRM <a class="cite-ref" href="#ref-6">[6]</a></td><td>Online</td><td>Periodically reviews a window of recent steps and steers the agent</td></tr>
+        <tr><td>Self reported confidence</td><td>Online</td><td>Intervenes when the agent's own confidence drops</td></tr>
+        <tr><td>Fixed frequency checks</td><td>Online</td><td>Checks the run every N steps, whatever its state</td></tr>
+        <tr><td>No intervention</td><td>Never</td><td>The unmodified agent</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="sec">Related work</h2>
+  <p><strong>Failure attribution.</strong> A growing line of work asks which agent, and which step, caused a failure. Taxonomies of agent failures show that most failed runs trace back to a small number of root causes that then propagate<a class="cite-ref" href="#ref-7">[7, 8]</a>, and benchmarks and methods for automated attribution locate the decisive step after the fact<a class="cite-ref" href="#ref-9">[9, 10]</a>. HazEP shares the premise that errors propagate, but acts on it during the run rather than after it.</p>
+  <p><strong>Early failure prediction.</strong> Closest in spirit are methods that predict failure before a run ends: a probe cascade over model activations that aborts doomed episodes with controlled recall<a class="cite-ref" href="#ref-11">[11]</a>, and weakly supervised alerting over dialogs and agent trajectories<a class="cite-ref" href="#ref-12">[12]</a>. HazEP needs no access to model internals and offers a richer action space than abort or continue. Modelling uncertainty propagation with self exciting point processes<a class="cite-ref" href="#ref-13">[13]</a> is a close analogue of the amplifying and damped patterns HazEP reads from its hazard curve.</p>
+  <p><strong>Cost of failure.</strong> Measurements of where tokens go in agentic software engineering<a class="cite-ref" href="#ref-14">[14]</a> and of whether agents respect a budget<a class="cite-ref" href="#ref-15">[15]</a> show how much of an agent's spend is lost to failed and circular work, which is the waste an early intervention can recover.</p>
+
+  <h2 class="sec">Experiments</h2>
+
+  <p class="exp-label">Experiment 1</p>
+  <h3 class="exp">Can a cheap model predict hazard from step structure alone?</h3>
+  <p>An LLM judge gives a rich hazard signal but costs one model call per step. The first question is whether that signal survives when we keep only features that are free to compute. We trained the learned hazard model on <strong>9,721 steps from 1,532 software engineering tasks</strong> and evaluated it on <strong>2,326 steps from 384 held out tasks</strong>, with no task shared between the splits. Features that would leak the answer, such as overlap with the files changed by the reference fix, were fixed to neutral values, because they are unknown during a real run.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:460px">
+      <thead><tr><th>Metric on held out tasks</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Concordance index</td><td class="num">0.91</td></tr>
+        <tr><td>AUC, high hazard (&lambda; &ge; 0.5)</td><td class="num">0.90</td></tr>
+        <tr><td>AUC, elevated hazard (&lambda; &ge; 0.3)</td><td class="num">0.85</td></tr>
+        <tr><td>Mean absolute error</td><td class="num">0.074</td></tr>
+        <tr><td>R<sup>2</sup></td><td class="num">0.77</td></tr>
+        <tr><td>Expected calibration error</td><td class="num">0.012</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Most of the judge's signal is recoverable from structure alone.</strong> The model orders steps by risk almost as the judge does and is well calibrated, while needing no model call. This makes it practical to score every step of every run, and to use the expensive judge only where the cheap model is uncertain.</p>
+  <div class="callout"><p>These numbers measure agreement with the judge's labels on unseen tasks. Agreement with the judge is not the same as predicting task failure, which Experiment 2 addresses.</p></div>
+
+  <p class="exp-label">Experiment 2</p>
+  <h3 class="exp">Does intervening during a live run help?</h3>
+  <p>Detecting risk is only half of the problem. In early trials on live agent runs, the first judge was too lenient: its hazard stayed low on almost every step, so real corrections rarely fired, while periodic checkpoint messages added tokens without carrying a useful signal. The lesson is that <strong>an intervention is only as good as its calibration and its message</strong>. Guidance must point at concrete evidence in the trajectory, such as the repeated edit or the test that keeps failing, to help the agent rather than distract it.</p>
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;HazEP: Catching LLM agent errors before they cascade.&rdquo; July 2026. https://paultrust26.github.io/paultrust/blog/hazep.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026hazep,
+  title        = {{HazEP: Catching LLM agent errors before they cascade}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = jul,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/hazep.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">REFLECT: Intervention-Supported Error Attribution for Silent Failures in LLM Agent Traces</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2606.09071">[PDF]</a><span class="ra">Lin, X., Wang, Y., Kwok, T.S.T., Guo, D., Nale, S.A., Fleming, C. and Cheng, G., 2026. arXiv preprint arXiv:2606.09071.</span></li>
+      <li id="ref-2"><span class="rt">AgenTracer: Who Is Inducing Failure in the LLM Agentic Systems?</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2509.03312">[PDF]</a><span class="ra">Zhang, G., Wang, J., Chen, J., Zhou, W., Wang, K. and Yan, S., 2025. arXiv preprint arXiv:2509.03312.</span></li>
+      <li id="ref-3"><span class="rt">FALAT: Tracing Failures in LLM Agent Trajectories via Dependency-Guided Search</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2606.00765">[PDF]</a><span class="ra">Rafi, M.N., Ahasanuzzaman, M., Kim, D.J., Wang, Z. and Chen, T., 2026. arXiv preprint arXiv:2606.00765.</span></li>
+      <li id="ref-4"><span class="rt">STeCa: Step-level Trajectory Calibration for LLM Agent Learning</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2502.14276">[PDF]</a><span class="ra">Wang, H., Wang, J., Leong, C.T. and Li, W., 2025. Findings of the Association for Computational Linguistics (ACL).</span></li>
+      <li id="ref-5"><span class="rt">SWE-TRACE: Optimizing Long-Horizon SWE Agents Through Rubric Process Reward Models and Heuristic Test-Time Scaling</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2604.14820">[PDF]</a><span class="ra">Han, H., Xie, J., Ma, X., Zhu, W., Zhang, Z., Long, Z., Chen, H. and Ye, Q., 2026. arXiv preprint arXiv:2604.14820.</span></li>
+      <li id="ref-6"><span class="rt">When Agents go Astray: Course-Correcting SWE Agents with PRMs</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2509.02360">[PDF]</a><span class="ra">Gandhi, S., Tsay, J., Ganhotra, J., Kate, K. and Rizk, Y., 2025. arXiv preprint arXiv:2509.02360.</span></li>
+      <li id="ref-7"><span class="rt">Why Do Multi-Agent LLM Systems Fail?</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2503.13657">[PDF]</a><span class="ra">Cemri, M., Pan, M.Z., Yang, S., Agrawal, L.A., Chopra, B., Tiwari, R., Keutzer, K., Parameswaran, A., Klein, D., Ramchandran, K., Zaharia, M., Gonzalez, J.E. and Stoica, I., 2025. arXiv preprint arXiv:2503.13657.</span></li>
+      <li id="ref-8"><span class="rt">Where LLM Agents Fail and How They can Learn From Failures</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2509.25370">[PDF]</a><span class="ra">Zhu, K., Liu, Z., Li, B., Tian, M., Yang, Y., Zhang, J., Han, P., Xie, Q., Cui, F., Zhang, W., Ma, X., Yu, X., Ramesh, G., Wu, J., Liu, Z., Lu, P., Zou, J. and You, J., 2025. arXiv preprint arXiv:2509.25370.</span></li>
+      <li id="ref-9"><span class="rt">Which Agent Causes Task Failures and When? On Automated Failure Attribution of LLM Multi-Agent Systems</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2505.00212">[PDF]</a><span class="ra">Zhang, S., Yin, M., Zhang, J., Liu, J., Han, Z., Zhang, J., Li, B., Wang, C., Wang, H., Chen, Y. and Wu, Q., 2025. arXiv preprint arXiv:2505.00212.</span></li>
+      <li id="ref-10"><span class="rt">From Flat Logs to Causal Graphs: Hierarchical Failure Attribution for LLM-based Multi-Agent Systems</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2602.23701">[PDF]</a><span class="ra">Wang, Y., Wu, W., Wang, J. and Wang, Q., 2026. arXiv preprint arXiv:2602.23701.</span></li>
+      <li id="ref-11"><span class="rt">Doomed from the Start: Early Abort of LLM Agent Episodes via a Recall-Controlled Probe Cascade</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2607.06503">[PDF]</a><span class="ra">Ruan, K., Huang, Z., Zhou, Z., Wei, Q., Lin, J., Wang, X. and Sun, H., 2026. arXiv preprint arXiv:2607.06503.</span></li>
+      <li id="ref-12"><span class="rt">When Evidence is Sparse: Weakly Supervised Early Failure Alerting in Dialogs and LLM-Agent Trajectories</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2606.05414">[PDF]</a><span class="ra">Baidya, A., Liang, X., Guo, R., Gao, X. and Das, K., 2026. arXiv preprint arXiv:2606.05414.</span></li>
+      <li id="ref-13"><span class="rt">HawkesLLM: Semantic Uncertainty Propagation in Agentic Text Simulation</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2605.23043">[PDF]</a><span class="ra">Deng, Z., Ye, T. and Xie, L., 2026. ICML Workshop on Statistical Frameworks for Uncertainty in Agentic Systems.</span></li>
+      <li id="ref-14"><span class="rt">Tokenomics: Quantifying Where Tokens Are Used in Agentic Software Engineering</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2601.14470">[PDF]</a><span class="ra">Salim, M., Latendresse, J., Khatoonabadi, S. and Shihab, E., 2026. arXiv preprint arXiv:2601.14470.</span></li>
+      <li id="ref-15"><span class="rt">BAGEN: Are LLM Agents Budget-Aware?</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2606.00198">[PDF]</a><span class="ra">Lin, Y., Wang, Z., Liu, M., Shan, Y., Bai, L., Zhang, J., Jin, X., Chen, B., Su, J., Wang, X., Pei, J. and Li, M., 2026. arXiv preprint arXiv:2606.00198.</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitKV | Paul Trust</title>
+<meta name="description" content="A training free method that sets each input&rsquo;s KV cache budget from the agreement of its own attention.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">FitKV:</p>
+  <h1 class="main-title">Fitting the KV cache budget to each input</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>October 2026</p></div>
+    <div><h4>Paper</h4><p>Preprint, 2026</p></div>
+  </div>
+
+  <div class="res-links">
+    <a class="res-btn" target="_blank" rel="noopener" href="../papers/fitkv.pdf"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M4 1h5l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 1.5V5h2.5L9 2.5zM5 8h6v1H5zm0 2h6v1H5zm0 2h4v1H5z"/></svg>Paper</a>
+    <a class="res-btn" target="_blank" rel="noopener" href="https://github.com/paultrust26/FitKV"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>The key value (KV) cache of an LLM grows with the input and dominates memory in long context inference. Eviction methods keep only the most attended tokens, but they give <strong>every input the same budget</strong>, even though some questions can be answered from a sliver of their context and others need almost all of it.</p>
+    <p>FitKV reads how strongly the final prompt queries <strong>agree on where to look</strong>, and uses that agreement to give each input its own budget between a minimum you choose and its full length. It needs no training, no threshold and no extra model pass.</p>
+    <p>On LongBench, with every comparison on identical examples, FitKV beats fixed budget methods at small budgets on all three models, and with a minimum of 128 tokens it <strong>retains at least 96% of full cache accuracy in every task category</strong>, against 52 to 93% for fixed budgets.</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Retain</p>
+      <p class="q">How much accuracy survives a tiny cache?</p>
+      <p class="src">Qwen2.5 3B and 7B, six QA tasks, minimum of 128 tokens per layer</p>
+      <p class="big"><strong>98 to 100%</strong>of full cache accuracy, against 72 to 77% for the best fixed budget</p>
+    </div>
+    <div class="hl">
+      <p class="label">Attribute</p>
+      <p class="q">Is the gain from the budget or from token selection?</p>
+      <p class="src">Same selection with a fixed budget, ten of twelve settings</p>
+      <p class="big"><strong>+4.1 to +7.1</strong>points at 128 tokens from adapting the budget alone</p>
+    </div>
+  </div>
+
+  <p>LLMs increasingly read long inputs: reports, codebases, dialogue histories, retrieved passages. Every layer stores a key and a value for every input token, and each new token reads all of them. For Qwen2.5 7B, the cache of a single 128K token input takes 7 GiB in 16 bit precision, half the size of the model weights, so the cache rather than computation limits how many requests can be served.</p>
+  <p>Eviction keeps part of the cache after the prompt is processed. H2O accumulates attention over all positions<a class="cite-ref" href="#ref-1">[1]</a>, SnapKV uses a window of queries at the end of the prompt<a class="cite-ref" href="#ref-2">[2]</a>, Quest bounds attention per page<a class="cite-ref" href="#ref-3">[3]</a>, and PyramidKV and Ada KV redistribute the budget across layers and heads<a class="cite-ref" href="#ref-4">[4, 5]</a>. In all of them, the <strong>total</strong> budget is the same for every input.</p>
+
+  <h2 class="sec">Inputs need very different budgets</h2>
+  <figure>
+    <img src="img/budget_needed.png" alt="Stacked bars per task showing the share of examples for which 128 tokens suffice, 512 to 2048 are needed, or more than 2048 are needed">
+    <figcaption><strong>Figure 1.</strong> For each LongBench QA task, the share of examples whose full cache score SnapKV reproduces with 128 tokens, with 512 to 2048 tokens, or not even with 2048.</figcaption>
+  </figure>
+  <p>Across the six question answering tasks, 128 tokens already reproduce the full cache score for 60% of examples, while for 20% even 2,048 tokens are not enough. Single document tasks are the hardest to budget: the answer to a question about a long article may lie anywhere in it. Any fixed budget is too large for most inputs and too small for a sizeable minority. The difficulty is to tell them apart <em>before</em> generating, without labels and without an extra pass.</p>
+
+  <h2 class="sec">Method</h2>
+  <figure>
+    <img src="img/fitkv_overview.png" alt="FitKV overview: window attention in late layers, per block disagreement, routing scalar lambda, per input budget, and block selection in every layer">
+    <figcaption><strong>Figure 2.</strong> How FitKV works. In the last third of the layers, the final prompt queries attend to blocks of the context. The disagreement between queries sets a scalar that places the input&rsquo;s budget between the minimum B and its full length n, and every layer then keeps its top blocks.</figcaption>
+  </figure>
+  <p class="exp-label">Step 1</p>
+  <h3 class="exp">Measure how much the final queries disagree</h3>
+  <p>After the prompt pass, FitKV looks at the last 64 prompt queries, which usually contain the question, in the last third of the layers. Attention is pooled into blocks of 16 tokens, and for each block FitKV takes the mean and the standard deviation of attention across the queries. Their ratio measures <strong>disagreement</strong>: low when all queries look at the same evidence, high when attention is fragmented.</p>
+  <p class="exp-label">Step 2</p>
+  <h3 class="exp">Turn disagreement into a per input budget</h3>
+  <p>The averaged disagreement becomes a scalar &lambda; between zero and one, and the budget of the input is placed between the minimum <em>B</em> and the full length <em>n</em>: B<sub>x</sub> = n &minus; &lambda;(n &minus; B). When the queries agree, the evidence is shared and the full cache behaviour is worth keeping, so the budget stays near <em>n</em>; when they disagree, the cache shrinks towards the minimum.</p>
+  <p class="exp-label">Step 3</p>
+  <h3 class="exp">Select blocks with the same statistics</h3>
+  <p>Every layer then keeps its highest scoring blocks, plus the observation window and the last two blocks. A block's score combines its mean attention, its spread across queries and a value term that measures how far the block's values lie from the window's attention output.</p>
+
+  <h2 class="sec">Baselines and setup</h2>
+  <p>FitKV is compared with H2O<a class="cite-ref" href="#ref-1">[1]</a>, SnapKV<a class="cite-ref" href="#ref-2">[2]</a>, Quest<a class="cite-ref" href="#ref-3">[3]</a>, PyramidKV<a class="cite-ref" href="#ref-4">[4]</a> and Ada KV<a class="cite-ref" href="#ref-5">[5]</a>, and with FitKV (fixed B), which uses FitKV's block selection with a fixed budget. All methods share one implementation, so differences come only from selection and budget. Evaluation uses LongBench<a class="cite-ref" href="#ref-6">[6]</a> on Qwen2.5 3B, Qwen2.5 7B and Llama 3.1 8B. LongBench has two versions whose example sets differ, so <strong>every comparison is made on identical examples</strong>, and differences are tested with paired bootstrap intervals.</p>
+
+  <h2 class="sec">Experiments</h2>
+  <p class="exp-label">Experiment 1</p>
+  <h3 class="exp">How close to the full cache does each method stay?</h3>
+  <figure>
+    <img src="img/results_retained.png" alt="Heatmap of the percentage of full cache accuracy retained by each method at budgets of 128, 512 and 2048 on two models; FitKV retains 98 to 100 percent everywhere">
+    <figcaption><strong>Figure 3.</strong> Percentage of full cache accuracy retained, averaged over the six QA tasks. FitKV is the only method that retains at least 98% at every budget.</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:720px">
+      <thead><tr><th>Method</th><th>3B, 128</th><th>3B, 512</th><th>3B, 2048</th><th>7B, 128</th><th>7B, 512</th><th>7B, 2048</th></tr></thead>
+      <tbody>
+        <tr><td>Full cache</td><td class="num">26.4</td><td class="num">26.4</td><td class="num">26.4</td><td class="num">18.6</td><td class="num">18.6</td><td class="num">18.6</td></tr>
+        <tr><td>H2O</td><td class="num">10.6</td><td class="num">13.8</td><td class="num">15.9</td><td class="num">10.6</td><td class="num">12.2</td><td class="num">14.3</td></tr>
+        <tr><td>Quest</td><td class="num">11.6</td><td class="num">14.5</td><td class="num">16.6</td><td class="num">12.3</td><td class="num">14.4</td><td class="num">15.9</td></tr>
+        <tr><td>SnapKV</td><td class="num">18.8</td><td class="num">23.6</td><td class="num">26.2</td><td class="num">14.3</td><td class="num">17.3</td><td class="num">18.1</td></tr>
+        <tr><td>PyramidKV</td><td class="num">17.6</td><td class="num">20.0</td><td class="num">24.0</td><td class="num">13.5</td><td class="num">15.8</td><td class="num">18.0</td></tr>
+        <tr><td>Ada KV</td><td class="num">19.1</td><td class="num">22.3</td><td class="num">26.0</td><td class="num">13.9</td><td class="num">15.5</td><td class="num">18.4</td></tr>
+        <tr><td>FitKV (fixed B)</td><td class="num">18.8</td><td class="num">24.2</td><td class="num">25.9</td><td class="num">14.4</td><td class="num">17.3</td><td class="num">18.5</td></tr>
+        <tr style="background:var(--accent-soft)"><td>FitKV</td><td class="num">25.9</td><td class="num">25.9</td><td class="num">26.1</td><td class="num">18.6</td><td class="num">18.6</td><td class="num">18.7</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 1.</strong> Mean score over the six QA tasks on Qwen2.5 3B and 7B, for minimum budgets of 128, 512 and 2048 tokens per layer. All rows of a column use identical examples.</p>
+  </div>
+  <p>Fixed budget methods lose accuracy steadily as the budget shrinks; at 128 tokens the best of them trails the full cache by 7.3 points on Qwen2.5 3B. FitKV stays within 0.6 points of the full cache at every budget, an improvement of 6.8 points on the 3B model and 4.3 on the 7B model over the best fixed budget method at 128 tokens.</p>
+
+  <p class="exp-label">Experiment 2</p>
+  <h3 class="exp">Where does the gain come from?</h3>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:600px">
+      <thead><tr><th>Model</th><th>Budget</th><th>vs best baseline</th><th>vs FitKV (fixed B)</th></tr></thead>
+      <tbody>
+        <tr><td>Qwen2.5 3B</td><td class="num">128</td><td class="num">+6.8</td><td class="num">+7.1</td></tr>
+        <tr><td></td><td class="num">256</td><td class="num">+6.2</td><td class="num">+5.6</td></tr>
+        <tr><td></td><td class="num">512</td><td class="num">+2.2</td><td class="num">+1.7</td></tr>
+        <tr><td></td><td class="num">1024</td><td class="num">+1.7</td><td class="num">+1.4</td></tr>
+        <tr><td></td><td class="num">2048</td><td class="num">&minus;0.1</td><td class="num">+0.2</td></tr>
+        <tr><td>Qwen2.5 7B</td><td class="num">128</td><td class="num">+4.3</td><td class="num">+4.1</td></tr>
+        <tr><td></td><td class="num">256</td><td class="num">+9.2</td><td class="num">+9.4</td></tr>
+        <tr><td></td><td class="num">512</td><td class="num">+1.3</td><td class="num">+1.3</td></tr>
+        <tr><td></td><td class="num">1024</td><td class="num">+1.3</td><td class="num">+1.1</td></tr>
+        <tr><td></td><td class="num">2048</td><td class="num">+0.4</td><td class="num">+0.2</td></tr>
+        <tr><td>Llama 3.1 8B</td><td class="num">256</td><td class="num">+4.0</td><td class="num">+3.8</td></tr>
+        <tr><td></td><td class="num">1024</td><td class="num">+1.2</td><td class="num">+0.9</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 2.</strong> Difference in mean score (points) between FitKV and the best baseline, and between FitKV and the same selection with a fixed budget. The 2048 token differences fall inside their bootstrap intervals; all others are significant.</p>
+  </div>
+  <p>FitKV is significantly better than the best baseline in ten of twelve settings; the two exceptions are at 2,048 tokens, where fixed budgets already approach the full cache. With a fixed budget, FitKV's selection is within 0.6 points of SnapKV, so the selection terms add little on their own. Adding the <strong>input adaptive budget</strong> improves on it in ten of twelve settings. The gain comes from deciding <em>how much</em> to keep, not <em>which</em> tokens to keep.</p>
+
+  <p class="exp-label">Experiment 3</p>
+  <h3 class="exp">Which kinds of task benefit?</h3>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:720px">
+      <thead><tr><th>Method</th><th>3B single doc</th><th>3B multi doc</th><th>3B few shot</th><th>7B single doc</th><th>7B multi doc</th><th>7B few shot</th></tr></thead>
+      <tbody>
+        <tr><td>SnapKV</td><td class="num">59.6</td><td class="num">82.1</td><td class="num">75.9</td><td class="num">66.0</td><td class="num">87.7</td><td class="num">63.2</td></tr>
+        <tr><td>PyramidKV</td><td class="num">52.6</td><td class="num">80.0</td><td class="num">73.7</td><td class="num">52.2</td><td class="num">93.1</td><td class="num">61.5</td></tr>
+        <tr><td>Ada KV</td><td class="num">60.6</td><td class="num">83.9</td><td class="num">75.8</td><td class="num">57.9</td><td class="num">91.7</td><td class="num">62.6</td></tr>
+        <tr style="background:var(--accent-soft)"><td>FitKV</td><td class="num">96.8</td><td class="num">99.5</td><td class="num">100.0</td><td class="num">97.9</td><td class="num">101.5</td><td class="num">98.9</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 3.</strong> Accuracy retained at 128 tokens, in percent of the full cache score, by task category.</p>
+  </div>
+  <p>Single document QA suffers most under fixed budgets, keeping only 52 to 67% of full cache accuracy; FitKV keeps 96.8 to 101.5% in every category. The largest single gains appear on TREC, a few shot task whose labelled examples are spread across the prompt: at 256 tokens the best baseline reaches 46.7 to 50.7, and FitKV 66.0 to 71.5. FitKV is also much less sensitive to the minimum: its output at 128 tokens is identical to its output at 2,048 for over 90% of examples.</p>
+
+  <div class="callout"><p>Because FitKV keeps more than the minimum for some inputs, methods are compared at the same minimum budget rather than the same average memory. The runs did not record how many tokens each input kept, so these results make no claim about memory saved or latency.</p></div>
+
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;FitKV: Fitting the KV cache budget to each input.&rdquo; October 2026. https://paultrust26.github.io/paultrust/blog/fitkv.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026fitkvblog,
+  title        = {{FitKV: Fitting the KV cache budget to each input}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = oct,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/fitkv.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.14048">[PDF]</a><span class="ra">Zhang, Z., Sheng, Y., Zhou, T., Chen, T., Zheng, L., Cai, R., Song, Z., Tian, Y., R&eacute;, C., Barrett, C., Wang, Z. and Chen, B., 2023. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-2"><span class="rt">SnapKV: LLM Knows What You Are Looking for Before Generation</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2404.14469">[PDF]</a><span class="ra">Li, Y., Huang, Y., Yang, B., Venkitesh, B., Locatelli, A., Ye, H., Cai, T., Lewis, P. and Chen, D., 2024. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-3"><span class="rt">Quest: Query-Aware Sparsity for Efficient Long-Context LLM Inference</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2406.10774">[PDF]</a><span class="ra">Tang, J., Zhao, Y., Zhu, K., Xiao, G., Kasikci, B. and Han, S., 2024. International Conference on Machine Learning (ICML).</span></li>
+      <li id="ref-4"><span class="rt">PyramidKV: Dynamic KV Cache Compression based on Pyramidal Information Funneling</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2406.02069">[PDF]</a><span class="ra">Cai, Z., Zhang, Y., Gao, B., Liu, Y., Li, Y., Liu, T., Lu, K., Xiong, W., Dong, Y., Hu, J. and Xiao, W., 2024. arXiv preprint arXiv:2406.02069.</span></li>
+      <li id="ref-5"><span class="rt">Ada-KV: Optimizing KV Cache Eviction by Adaptive Budget Allocation for Efficient LLM Inference</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2407.11550">[PDF]</a><span class="ra">Feng, Y., Lv, J., Cao, Y., Xie, X. and Zhou, S.K., 2025. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-6"><span class="rt">LongBench: A Bilingual, Multitask Benchmark for Long Context Understanding</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2308.14508">[PDF]</a><span class="ra">Bai, Y., Lv, X., Zhang, J., Lyu, H., Tang, J., Huang, Z., Du, Z., Liu, X., Zeng, A., Hou, L., Dong, Y., Tang, J. and Li, J., 2024. Annual Meeting of the Association for Computational Linguistics (ACL).</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>

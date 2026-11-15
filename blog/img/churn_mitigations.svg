@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 320" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="320" fill="#fff"/>
+<text x="20" y="30" font-size="13" font-weight="700" fill="#1f2328">Lightweight mitigations, evaluated by trace replay</text>
+<line x1="250.0" y1="48" x2="250.0" y2="300" stroke="#e5e7eb"/><text x="250.0" y="314" font-size="11" fill="#6b7280" text-anchor="middle">0%</text>
+<line x1="410.0" y1="48" x2="410.0" y2="300" stroke="#e5e7eb"/><text x="410.0" y="314" font-size="11" fill="#6b7280" text-anchor="middle">25%</text>
+<line x1="570.0" y1="48" x2="570.0" y2="300" stroke="#e5e7eb"/><text x="570.0" y="314" font-size="11" fill="#6b7280" text-anchor="middle">50%</text>
+<line x1="730.0" y1="48" x2="730.0" y2="300" stroke="#e5e7eb"/><text x="730.0" y="314" font-size="11" fill="#6b7280" text-anchor="middle">75%</text>
+<text x="236" y="69" font-size="12" fill="#1f2328" text-anchor="end">Working set persistence, top 10 files</text>
+<text x="236" y="84" font-size="10.5" fill="#6b7280" text-anchor="end">re-reads avoided</text>
+<rect x="250" y="56" width="399.4" height="26" rx="4" fill="#0b5cad"/>
+<text x="657.4" y="74" font-size="12" font-weight="700" fill="#1f2328">62.4%</text>
+<text x="236" y="111" font-size="12" fill="#1f2328" text-anchor="end">Working set persistence, top 5 files</text>
+<text x="236" y="126" font-size="10.5" fill="#6b7280" text-anchor="end">re-reads avoided</text>
+<rect x="250" y="98" width="354.6" height="26" rx="4" fill="#9cc0ea"/>
+<text x="612.6" y="116" font-size="12" font-weight="700" fill="#1f2328">55.4%</text>
+<text x="236" y="153" font-size="12" fill="#1f2328" text-anchor="end">Bounded tool outputs, 2K chars</text>
+<text x="236" y="168" font-size="10.5" fill="#6b7280" text-anchor="end">context saved</text>
+<rect x="250" y="140" width="405.8" height="26" rx="4" fill="#1a7f37"/>
+<text x="663.8" y="158" font-size="12" font-weight="700" fill="#1f2328">63.4%</text>
+<text x="236" y="195" font-size="12" fill="#1f2328" text-anchor="end">Bounded tool outputs, 4K chars</text>
+<text x="236" y="210" font-size="10.5" fill="#6b7280" text-anchor="end">context saved</text>
+<rect x="250" y="182" width="305.3" height="26" rx="4" fill="#8fcf9f"/>
+<text x="563.3" y="200" font-size="12" font-weight="700" fill="#1f2328">47.7%</text>
+<text x="236" y="237" font-size="12" fill="#1f2328" text-anchor="end">Delegation context packets</text>
+<text x="236" y="252" font-size="10.5" fill="#6b7280" text-anchor="end">subagent reads avoidable</text>
+<rect x="250" y="224" width="210.6" height="26" rx="4" fill="#6b7280"/>
+<text x="468.6" y="242" font-size="12" font-weight="700" fill="#1f2328">32.9%</text>
+<text x="236" y="279" font-size="12" fill="#1f2328" text-anchor="end">Retry circuit breakers</text>
+<text x="236" y="294" font-size="10.5" fill="#6b7280" text-anchor="end">tool calls removed</text>
+<rect x="250" y="266" width="152.3" height="26" rx="4" fill="#d97706"/>
+<text x="410.3" y="284" font-size="12" font-weight="700" fill="#1f2328">23.8%</text>
+</svg>

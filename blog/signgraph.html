@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignGraph | Paul Trust</title>
+<meta name="description" content="Sign pattern graph diffusion for training free model merging.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">SignGraph:</p>
+  <h1 class="main-title">Merging models by the patterns their signs make</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>February 2026</p></div>
+    <div><h4>Paper</h4><p>EACL 2027</p></div>
+  </div>
+
+  <div class="res-links">
+    <a class="res-btn" target="_blank" rel="noopener" href="https://openreview.net/pdf?id=SV5VdwTd0q"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M4 1h5l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 1.5V5h2.5L9 2.5zM5 8h6v1H5zm0 2h6v1H5zm0 2h4v1H5z"/></svg>Paper</a>
+    <a class="res-btn" target="_blank" rel="noopener" href="https://github.com/paultrust26/signgraph"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>Model merging combines several fine tuned models into one without retraining or access to their data. Popular methods such as TIES resolve conflicts <strong>one parameter at a time</strong>, by majority sign vote and hard magnitude pruning.</p>
+    <p>SignGraph looks at the <strong>pattern of signs a parameter has across all task vectors</strong>. Parameters with the same pattern face the same conflict, so they are grouped, related groups share information through <strong>PageRank diffusion on a Hamming graph</strong>, and a soft gate suppresses weak groups. Only one value, the density, is tuned.</p>
+    <p>Across eight models from 0.5B to 8B and 144 evaluation slots, SignGraph <strong>wins 53% of slots, more than all eight baselines combined</strong>, and beats every baseline in paired tests (p &lt; 0.001).</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Merge</p>
+      <p class="q">How much of each fine tuned model survives the merge?</p>
+      <p class="src">Six GLUE adapters merged into one model, averaged over eight models</p>
+      <p class="big"><strong>91.5%</strong>retention, against 84.2% for the best baseline</p>
+    </div>
+    <div class="hl">
+      <p class="label">Compare</p>
+      <p class="q">Is the gain consistent, slot by slot?</p>
+      <p class="src">Wilcoxon signed rank over 144 paired slots</p>
+      <p class="big"><strong>+8.5</strong>points over the closest baselines, at least 103 of 144 slots won against each</p>
+    </div>
+  </div>
+
+  <p>Open model hubs host tens of thousands of adapters, each fine tuned for one skill: sentiment, safety classification, code, translation. Users often want one model with several of these skills, and joint multi task training is expensive, needs every original dataset and must be repeated whenever a task is added. Model merging avoids all of this by combining models directly in parameter space.</p>
+  <p>The basic object is the <strong>task vector</strong>, the difference between a fine tuned model and its base. Task Arithmetic showed that task vectors can be added<a class="cite-ref" href="#ref-1">[1]</a>. TIES improved on this with magnitude pruning, a majority vote on the sign of each parameter and averaging of the values that agree<a class="cite-ref" href="#ref-2">[2]</a>, and DARE replaced pruning with random dropout and rescaling<a class="cite-ref" href="#ref-3">[3]</a>. All of these treat each parameter position on its own.</p>
+
+  <h2 class="sec">The idea: sign patterns carry structure</h2>
+  <p>Take a parameter and write down the sign it has in each of <em>N</em> task vectors, for example [+, +, &minus;, +]. This <strong>sign fingerprint</strong> describes the parameter's cross task agreement, independently of its magnitude. A parameter with [+, +, +, +] has full consensus; one with [+, &minus;, +, &minus;] has systematic disagreement. Every parameter with the same fingerprint faces exactly the same merging problem, so it makes sense to treat them as a group. A group's mean is then estimated from thousands of parameters instead of one, which is most valuable for rare, conflicted patterns.</p>
+
+  <figure>
+    <img src="img/signgraph_overview.png" alt="SignGraph overview: task vectors read as sign patterns, a sign pattern graph shaped like a cube, the graph after diffusion, and the merged task vector after soft gating">
+    <figcaption><strong>Figure 1.</strong> SignGraph in four steps. (a) Reading each parameter's signs across three task vectors gives a sign pattern. (b) Parameters with the same pattern form a cluster; clusters one sign apart are joined by solid edges and two signs apart by dashed edges, and node size is the number of parameters. (c) Diffusion over the graph pulls each cluster towards its neighbours. (d) A soft gate fades low importance clusters rather than cutting them, giving the merged task vector.</figcaption>
+  </figure>
+
+  <h2 class="sec">Method</h2>
+  <p class="exp-label">Step 1</p>
+  <h3 class="exp">Cluster parameters by sign fingerprint</h3>
+  <p>After flipping any task vector that is strongly anti correlated with the others, a rare case where two adapters learn the same solution with opposite signs, SignGraph averages the task vectors and assigns every parameter to one of 2<sup>N</sup> clusters by its fingerprint. In every model tested, all 2<sup>N</sup> clusters are occupied, 64 of 64 for six adapters and 512 of 512 for nine.</p>
+  <p class="exp-label">Step 2</p>
+  <h3 class="exp">Link clusters whose patterns are close</h3>
+  <p>Clusters become nodes of a graph, with an edge between two clusters whose fingerprints differ in one or two signs, weighted by the inverse of that Hamming distance. Two clusters at distance one disagree about exactly one task's vote, so they are the most reliable sources of shared signal. Hamming distance is scale free and depends only on agreement structure, which is the information SignGraph is built to use.</p>
+  <p class="exp-label">Step 3</p>
+  <h3 class="exp">Diffuse consensus and shift parameters</h3>
+  <p>Personalised PageRank<a class="cite-ref" href="#ref-4">[4]</a> runs for three steps over the cluster means, mixing each cluster's own signal with its neighbours'. Each parameter then moves towards its cluster's smoothed mean, so clusters that were outliers relative to their neighbours receive the largest correction.</p>
+  <p class="exp-label">Step 4</p>
+  <h3 class="exp">Suppress weak clusters softly</h3>
+  <p>Each cluster's importance is its size times its mean magnitude. A sigmoid gate centred at a quantile set by the density <em>&rho;</em> scales parameters down smoothly, instead of zeroing everything below a hard threshold. The whole pipeline costs about the same as TIES, since the graph has only 2<sup>N</sup> nodes. Every other hyperparameter is fixed before evaluation, and a sensitivity sweep moves results by less than one point.</p>
+
+  <h2 class="sec">Baselines and setup</h2>
+  <p>SignGraph is compared with eight training free merging methods: TIES<a class="cite-ref" href="#ref-2">[2]</a>, DARE TIES<a class="cite-ref" href="#ref-3">[3]</a>, DELLA<a class="cite-ref" href="#ref-5">[5]</a>, Model Breadcrumbs<a class="cite-ref" href="#ref-6">[6]</a>, Fisher merging<a class="cite-ref" href="#ref-7">[7]</a>, Task Arithmetic<a class="cite-ref" href="#ref-1">[1]</a>, simple averaging<a class="cite-ref" href="#ref-8">[8]</a> and Consensus TIES, a conflict aware TIES variant. Each model is a LoRA<a class="cite-ref" href="#ref-9">[9]</a> adapter of rank 16, trained on Llama 3 and Qwen 2.5 / Qwen 3 models from 0.5B to 8B parameters. The main metric is <strong>retention</strong>: the merged model's score on a task as a share of the score of the model fine tuned for that task alone. Densities are chosen on a validation split and all results are reported on held out test splits, with the same protocol for every method.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:640px">
+      <thead><tr><th>Setting</th><th>Adapters merged</th><th>Slots</th><th>Tasks</th></tr></thead>
+      <tbody>
+        <tr><td>GLUE</td><td class="num">6</td><td class="num">48</td><td class="num">SST-2, CoLA, RTE, QQP, MNLI, QNLI</td></tr>
+        <tr><td>All tasks</td><td class="num">9</td><td class="num">72</td><td class="num">GLUE, safety, code, Yoruba to English</td></tr>
+        <tr><td>Non-GLUE</td><td class="num">3</td><td class="num">24</td><td class="num">Safety, code, translation</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 1.</strong> Evaluation settings. A slot is one model and one task.</p>
+  </div>
+
+  <h2 class="sec">Experiments</h2>
+  <p class="exp-label">Experiment 1</p>
+  <h3 class="exp">Does SignGraph retain more of each fine tuned model?</h3>
+  <figure>
+    <img src="img/signgraph_results.svg" alt="Bar chart of average retention: GLUE 91.5 against 84.2, all tasks 76.6 against 70.6, non GLUE 67.6 against 62.2">
+    <figcaption><strong>Figure 2.</strong> Average retention across eight models in each setting, for SignGraph and the strongest baseline in that setting.</figcaption>
+  </figure>
+  <p>SignGraph has the highest average retention in all three settings. On GLUE it wins 27 of 48 slots and leads on five of six tasks, with the largest margins on RTE (+11.2 points) and CoLA (+4.0). With nine adapters it wins 42 of 72 slots, more than four times the next method, and leads on eight of nine tasks.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:700px">
+      <thead><tr><th>Method</th><th>Average</th><th>CoLA</th><th>MNLI</th><th>QNLI</th><th>QQP</th><th>RTE</th><th>SST-2</th></tr></thead>
+      <tbody>
+        <tr style="background:var(--accent-soft)"><td>SignGraph</td><td class="num">91.5</td><td class="num">91.3</td><td class="num">84.5</td><td class="num">90.8</td><td class="num">89.1</td><td class="num">94.0</td><td class="num">99.2</td></tr>
+        <tr><td>DARE TIES</td><td class="num">84.2</td><td class="num">85.3</td><td class="num">80.8</td><td class="num">80.0</td><td class="num">87.1</td><td class="num">82.8</td><td class="num">89.2</td></tr>
+        <tr><td>Breadcrumbs</td><td class="num">83.0</td><td class="num">87.3</td><td class="num">81.6</td><td class="num">77.5</td><td class="num">88.3</td><td class="num">80.4</td><td class="num">83.1</td></tr>
+        <tr><td>Fisher</td><td class="num">78.1</td><td class="num">57.2</td><td class="num">84.2</td><td class="num">75.8</td><td class="num">85.1</td><td class="num">81.5</td><td class="num">84.6</td></tr>
+        <tr><td>Consensus TIES</td><td class="num">77.1</td><td class="num">72.8</td><td class="num">73.5</td><td class="num">73.8</td><td class="num">89.6</td><td class="num">73.9</td><td class="num">78.2</td></tr>
+        <tr><td>TIES</td><td class="num">76.6</td><td class="num">72.9</td><td class="num">76.3</td><td class="num">72.8</td><td class="num">89.4</td><td class="num">72.9</td><td class="num">74.9</td></tr>
+        <tr><td>DELLA</td><td class="num">68.3</td><td class="num">69.1</td><td class="num">67.7</td><td class="num">63.4</td><td class="num">84.9</td><td class="num">58.7</td><td class="num">66.3</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 2.</strong> Average retention (%) per task on GLUE, across eight models.</p>
+  </div>
+
+  <p class="exp-label">Experiment 2</p>
+  <h3 class="exp">Are the gains consistent?</h3>
+  <p>Paired Wilcoxon signed rank tests over all 144 slots, with Holm correction, are significant against every baseline at p &lt; 0.001. Because the same models and tasks appear in several settings, the slots are not fully independent, so these tests are supporting evidence rather than proof.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:560px">
+      <thead><tr><th>Baseline</th><th>Mean gap (points)</th><th>Cohen's d</th><th>Slots won / lost</th></tr></thead>
+      <tbody>
+        <tr><td>Breadcrumbs</td><td class="num">+8.5</td><td class="num">0.50</td><td class="num">114 / 28</td></tr>
+        <tr><td>DARE TIES</td><td class="num">+8.5</td><td class="num">0.58</td><td class="num">120 / 24</td></tr>
+        <tr><td>Consensus TIES</td><td class="num">+11.4</td><td class="num">0.54</td><td class="num">103 / 39</td></tr>
+        <tr><td>TIES</td><td class="num">+11.4</td><td class="num">0.54</td><td class="num">107 / 35</td></tr>
+        <tr><td>Fisher</td><td class="num">+12.6</td><td class="num">0.66</td><td class="num">124 / 18</td></tr>
+        <tr><td>DELLA</td><td class="num">+17.2</td><td class="num">0.62</td><td class="num">110 / 32</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 3.</strong> SignGraph against each baseline over 144 paired slots.</p>
+  </div>
+
+  <p class="exp-label">Experiment 3</p>
+  <h3 class="exp">When does merging work best?</h3>
+  <p>The advantage grows with adapter quality. On weak adapters, below 78% individual accuracy, every method struggles and SignGraph trails the per slot best baseline by 2.3 points. On very strong adapters, above 92%, it wins 58% of slots and leads by 2.9 points. Strong adapters have more coherent sign patterns, which is exactly what clustering exploits. In practice, good individual adapters matter for good merges.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:640px">
+      <thead><tr><th>Adapter quality</th><th>Slots</th><th>SignGraph win rate</th><th>SignGraph</th><th>Best baseline per slot</th></tr></thead>
+      <tbody>
+        <tr><td>Weak (&lt; 78%)</td><td class="num">24</td><td class="num">42%</td><td class="num">49.4</td><td class="num">51.8</td></tr>
+        <tr><td>Moderate (78 to 86%)</td><td class="num">20</td><td class="num">55%</td><td class="num">90.1</td><td class="num">88.7</td></tr>
+        <tr><td>Strong (86 to 92%)</td><td class="num">22</td><td class="num">50%</td><td class="num">90.6</td><td class="num">88.8</td></tr>
+        <tr><td>Very strong (&gt; 92%)</td><td class="num">12</td><td class="num">58%</td><td class="num">93.0</td><td class="num">90.1</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 4.</strong> Retention (%) by the accuracy of the individual adapters. The best baseline is chosen separately for each slot.</p>
+  </div>
+
+  <p class="exp-label">Experiment 4</p>
+  <h3 class="exp">Which components matter?</h3>
+  <p>Removing a component costs little when GLUE adapters dominate the merge, but a lot when they do not. With the three non GLUE adapters alone, removing graph diffusion costs 5.5 points, removing the consensus shift 5.3 and replacing soft suppression with a hard threshold 8.2. Code generation drives this: without diffusion its retention drops 16.4 points. A TIES variant given SignGraph's soft gate still falls below SignGraph on all four models tested, so the clustering and diffusion contribute beyond the gate.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:480px">
+      <thead><tr><th>Removed component</th><th>All tasks</th><th>Non-GLUE</th></tr></thead>
+      <tbody>
+        <tr><td>Graph diffusion</td><td class="num">&minus;1.3</td><td class="num">&minus;5.5</td></tr>
+        <tr><td>Consensus shift</td><td class="num">&minus;1.5</td><td class="num">&minus;5.3</td></tr>
+        <tr><td>Soft suppression</td><td class="num">&minus;0.2</td><td class="num">&minus;8.2</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 5.</strong> Change in average retention (points) when one component is removed, at density 0.01.</p>
+  </div>
+
+  <p>One finding is a challenge for the whole field rather than for SignGraph. When six classification adapters are merged with three generative ones, the classification adapters dominate the sign patterns and safety retention falls to 58.8%; merged alone, the three non GLUE adapters reach 100.9%. No method handles this heterogeneous case well, which makes it a clear target for future work.</p>
+
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;SignGraph: Merging models by the patterns their signs make.&rdquo; February 2026. https://paultrust26.github.io/paultrust/blog/signgraph.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026signgraphblog,
+  title        = {{SignGraph: Merging models by the patterns their signs make}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = feb,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/signgraph.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">Editing Models with Task Arithmetic</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2212.04089">[PDF]</a><span class="ra">Ilharco, G., Ribeiro, M.T., Wortsman, M., Schmidt, L., Hajishirzi, H. and Farhadi, A., 2023. International Conference on Learning Representations (ICLR).</span></li>
+      <li id="ref-2"><span class="rt">TIES-Merging: Resolving Interference When Merging Models</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.01708">[PDF]</a><span class="ra">Yadav, P., Tam, D., Choshen, L., Raffel, C. and Bansal, M., 2023. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-3"><span class="rt">Language Models are Super Mario: Absorbing Abilities from Homologous Models as a Free Lunch</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2311.03099">[PDF]</a><span class="ra">Yu, L., Yu, B., Yu, H., Huang, F. and Li, Y., 2024. International Conference on Machine Learning (ICML).</span></li>
+      <li id="ref-4"><span class="rt">The PageRank Citation Ranking: Bringing Order to the Web</span><span class="ra">Page, L., Brin, S., Motwani, R. and Winograd, T., 1999. Stanford InfoLab Technical Report.</span></li>
+      <li id="ref-5"><span class="rt">DELLA-Merging: Reducing Interference in Model Merging through Magnitude-Based Sampling</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2406.11617">[PDF]</a><span class="ra">Deep, P.T., Bhardwaj, R. and Poria, S., 2024. arXiv preprint arXiv:2406.11617.</span></li>
+      <li id="ref-6"><span class="rt">Model Breadcrumbs: Scaling Multi-Task Model Merging with Sparse Masks</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2312.06795">[PDF]</a><span class="ra">Davari, M. and Belilovsky, E., 2023. arXiv preprint arXiv:2312.06795.</span></li>
+      <li id="ref-7"><span class="rt">Merging Models with Fisher-Weighted Averaging</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2111.09832">[PDF]</a><span class="ra">Matena, M.S. and Raffel, C.A., 2022. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-8"><span class="rt">Model Soups: Averaging Weights of Multiple Fine-tuned Models Improves Accuracy without Increasing Inference Time</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2203.05482">[PDF]</a><span class="ra">Wortsman, M., Ilharco, G., Gadre, S.Y., Roelofs, R., Gontijo-Lopes, R., Morcos, A.S., Namkoong, H., Farhadi, A., Carmon, Y., Kornblith, S. and Schmidt, L., 2022. International Conference on Machine Learning (ICML).</span></li>
+      <li id="ref-9"><span class="rt">LoRA: Low-Rank Adaptation of Large Language Models</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09685">[PDF]</a><span class="ra">Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L. and Chen, W., 2022. International Conference on Learning Representations (ICLR).</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>

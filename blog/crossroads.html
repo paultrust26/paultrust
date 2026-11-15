@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crossroads: Where Did the Tokens Go? | Paul Trust</title>
+<meta name="description" content="A visual analytics system that explains where an LLM agent session spent its tokens and why it failed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">Crossroads:</p>
+  <h1 class="main-title">Where did the tokens go, and why did the agent fail?</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>August 2026</p></div>
+  </div>
+
+  <div class="res-links">
+    <a class="res-btn" target="_blank" rel="noopener" href="https://github.com/paultrust26/crossroads"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>A benchmark reports whether an agent passed. It says nothing about <strong>where the tokens went, which steps were wasted, or why the run failed</strong>, and real sessions are messier than benchmark runs.</p>
+    <p>Crossroads turns a raw agent transcript into a sequence of decisions and builds views on top of it: <strong>token economics, compaction, failure patterns, behaviour audits and concrete fixes</strong>. Signals that come straight from the trace are exact and free; an optional LLM judge adds explanations that are always linked back to the steps they describe.</p>
+    <p>On five software engineering runs with a pass rate of one in five, Crossroads shows that <strong>three of the four failures were loops with three different causes</strong>, and pinpoints where each loop began.</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Explain</p>
+      <p class="q">Why did this run fail?</p>
+      <p class="src">Trace signals plus an LLM judge verdict</p>
+      <p class="big"><strong>Step 17</strong>where one agent entered a loop: 6 edits in 32 steps</p>
+    </div>
+    <div class="hl">
+      <p class="label">Account</p>
+      <p class="q">Was the budget well spent?</p>
+      <p class="src">Per step token accounting, no model needed</p>
+      <p class="big"><strong>6&times;</strong>token gap between the cheapest and costliest run, both failed</p>
+    </div>
+  </div>
+
+  <p>Real agent sessions rarely look like a benchmark run that ends with passing tests. A user asks several questions in one session, interrupts, changes direction, and the agent succeeds on one task and fails on the next. Tokens cost money, so it matters where they went. And as agents are given more autonomy, passing the tests is not enough: it also matters whether the agent did what was asked and avoided destructive actions.</p>
+  <p>Answering these questions today means reading thousands of lines of transcript by hand. Crossroads is built to answer them from the transcript alone.</p>
+
+  <h2 class="sec">From transcripts to decisions</h2>
+  <p>Every view rests on one data model. Each session is normalised into a flat list of <strong>steps</strong>, where a step is one agent decision: a tool call paired with the observation it returned. Steps are grouped by the user request that triggered them, and long sessions are split into segments where the task changes, using textual similarity between requests.</p>
+
+  <figure>
+    <img src="img/crossroads_teaser.jpg" alt="Crossroads views: corpus overview, topics, failure analysis, step trace and failure verdict">
+    <figcaption><strong>Figure 1.</strong> Crossroads on five software engineering agent runs. (a) Corpus overview with tokens, steps, observation savings and outcome per run. (b) Agent thoughts grouped by topic. (c) Heuristic failure modes and LLM judge failure patterns. (d) Step trace of one run, showing which observations were truncated and by how much. (e) The failure verdict for that run.</figcaption>
+  </figure>
+
+  <p class="exp-label">Trace signals</p>
+  <h3 class="exp">What can be learned without any model?</h3>
+  <ul class="list">
+    <li><strong>Token economics.</strong> Per step accounting of input, cached and output tokens, cache dynamics, and the cost of cache invalidation events, where the reusable prefix of the context collapses and must be paid for again.</li>
+    <li><strong>Compaction.</strong> What changed when the context was compacted, and how many tokens were spent afterwards recovering what was lost, for example by reading the same files again.</li>
+    <li><strong>Failure signals.</strong> Tool errors, retries, failed tests and repeated actions, combined into heuristic failure modes such as a loop with no progress.</li>
+    <li><strong>Files and topics.</strong> Which files were read, edited and tested, and how the agent's thoughts and the user's requests cluster by topic.</li>
+  </ul>
+
+  <p class="exp-label">Judge analysis</p>
+  <h3 class="exp">What needs a model, and how is it kept honest?</h3>
+  <p>Some questions, such as why a run failed or whether a behaviour was unsafe, need judgement. Crossroads uses an LLM judge<a class="cite-ref" href="#ref-1">[1]</a> to label the failure pattern of a session, whether it was recoverable, and any unusual or unsafe actions. Judge outputs are shown separately from trace signals and always linked to the steps they refer to, so a reader can check a verdict rather than take it on trust.</p>
+
+  <p class="exp-label">Actions</p>
+  <h3 class="exp">How does analysis turn into a fix?</h3>
+  <p>Patterns that recur across sessions, such as the same instruction repeated by the user or the same files read again and again, are turned into concrete suggestions: project rules, hooks and prompt changes that would prevent the pattern in later sessions.</p>
+
+  <h2 class="sec">Related work</h2>
+  <p><strong>Visual analysis of agents.</strong> AgentLens<a class="cite-ref" href="#ref-2">[2]</a> builds hierarchical temporal summaries of agent behaviour in LLM based multi agent simulations and traces causes between behaviours. AgentDiagnose<a class="cite-ref" href="#ref-3">[3]</a> scores trajectories on five agentic competencies, such as backtracking and self verification, and visualises them with embeddings and timelines. SeaView<a class="cite-ref" href="#ref-4">[4]</a> supports inspecting and comparing software engineering agent experiments. Crossroads differs in its unit of analysis and its questions: it treats every tool call as a decision, compares many real sessions at once, and puts cost, cache use and compaction next to failure.</p>
+  <p><strong>Where tokens go.</strong> Empirical studies of token use in agentic software engineering<a class="cite-ref" href="#ref-5">[5]</a> and of token economics for agents more broadly<a class="cite-ref" href="#ref-6">[6]</a> quantify how spend is distributed across phases and tools. Crossroads makes the same kind of accounting interactive and per step, so the cost of a particular wasted read or cache invalidation can be found in the trace.</p>
+  <p><strong>Exploring topics.</strong> The topic views follow the embed, cluster, label and project pipeline used to explore concepts inside language models<a class="cite-ref" href="#ref-7">[7]</a>, applied here to agent thoughts and user requests.</p>
+  <div class="table-wrap">
+    <table class="post-table">
+      <thead><tr><th>System</th><th>Unit of analysis</th><th>Cost and cache</th><th>Failure explanation</th><th>Many sessions</th></tr></thead>
+      <tbody>
+        <tr><td>AgentLens <a class="cite-ref" href="#ref-2">[2]</a></td><td>Simulated agent behaviours</td><td>No</td><td>Cause tracing</td><td>No</td></tr>
+        <tr><td>AgentDiagnose <a class="cite-ref" href="#ref-3">[3]</a></td><td>Trajectory competencies</td><td>No</td><td>Competency scores</td><td>Yes</td></tr>
+        <tr><td>SeaView <a class="cite-ref" href="#ref-4">[4]</a></td><td>SWE agent experiments</td><td>Limited</td><td>Inspection</td><td>Yes</td></tr>
+        <tr><td>Crossroads</td><td>Decisions (tool call and observation)</td><td>Yes</td><td>Trace signals and judge</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="sec">Case study</h2>
+  <p class="exp-label">Case study 1</p>
+  <h3 class="exp">What does a pass rate of one in five hide?</h3>
+  <p>Figure 1 applies Crossroads to five software engineering runs across five repositories, each produced by a different agent configuration, with about one million tokens in total. Only one run resolved its task.</p>
+  <ul class="list">
+    <li><strong>The failures share a shape but not a cause.</strong> The heuristic detector flagged three of the four failed runs as loops, where the agent repeats an action without progress. The judge assigned them three different causes: a knowledge gap, an execution error and a planning error. Each calls for a different fix.</li>
+    <li><strong>The loop is located, not just detected.</strong> In one run the agent entered a loop at step 17, making six edits in 32 steps, and the verdict points to the step where the repetition began.</li>
+    <li><strong>Cost and outcome are decoupled.</strong> The most expensive run used about six times the tokens of the cheapest, and both failed. In the run that truncated long observations, truncation cut served observation tokens by 28%, visible step by step in the trace.</li>
+  </ul>
+  <p>A single pass rate would hide all of this. The value of the views lies in separating runs that failed for different reasons and in showing where each budget went.</p>
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;Crossroads: Where did the tokens go, and why did the agent fail?&rdquo; August 2026. https://paultrust26.github.io/paultrust/blog/crossroads.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026crossroads,
+  title        = {{Crossroads: Where did the tokens go, and why did the agent fail?}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = aug,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/crossroads.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2306.05685">[PDF]</a><span class="ra">Zheng, L., Chiang, W.L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., Lin, Z., Li, Z., Li, D., Xing, E.P., Zhang, H., Gonzalez, J.E. and Stoica, I., 2023. Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track.</span></li>
+      <li id="ref-2"><span class="rt">AgentLens: Visual Analysis for Agent Behaviors in LLM-based Autonomous Systems</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2402.08995">[PDF]</a><span class="ra">Lu, J., Pan, B., Chen, J., Feng, Y., Hu, J., Peng, Y. and Chen, W., 2024. IEEE Transactions on Visualization and Computer Graphics.</span></li>
+      <li id="ref-3"><span class="rt">AgentDiagnose: An Open Toolkit for Diagnosing LLM Agent Trajectories</span><a class="rl" target="_blank" rel="noopener" href="https://aclanthology.org/2025.emnlp-demos.15.pdf">[PDF]</a><span class="ra">Ou, T., Guo, W., Gandhi, A., Neubig, G. and Yue, X., 2025. Conference on Empirical Methods in Natural Language Processing (EMNLP), System Demonstrations.</span></li>
+      <li id="ref-4"><span class="rt">SeaView: Software Engineering Agent Visual Interface for Enhanced Workflow</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2504.08696">[PDF]</a><span class="ra">Bula, T., Pujar, S., Buratti, L., Bornea, M. and Sil, A., 2025. arXiv preprint arXiv:2504.08696.</span></li>
+      <li id="ref-5"><span class="rt">Tokenomics: Quantifying Where Tokens Are Used in Agentic Software Engineering</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2601.14470">[PDF]</a><span class="ra">Salim, M., Latendresse, J., Khatoonabadi, S. and Shihab, E., 2026. arXiv preprint arXiv:2601.14470.</span></li>
+      <li id="ref-6"><span class="rt">Token Economics for LLM Agents: A Dual-View Study from Computing and Economics</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2605.09104">[PDF]</a><span class="ra">Chen, Y., Chen, J., He, C., Li, Y., Ji, Y., Wu, Y., Yang, D., Diao, L., Shou, L., Zhang, H., Li, H. and Chen, G., 2026. arXiv preprint arXiv:2605.09104.</span></li>
+      <li id="ref-7"><span class="rt">ConceptViz: A Visual Analytics Approach for Exploring Concepts in Large Language Models</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2509.20376">[PDF]</a><span class="ra">Li, H., Wen, Z., Jiang, Q., Li, C., Wu, Y., Yang, Y., Wang, Y., Huang, X., Zhu, M. and Chen, W., 2025. arXiv preprint arXiv:2509.20376.</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>

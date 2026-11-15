@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog | Paul Trust</title>
+<meta name="description" content="Notes on projects and papers by Paul Trust.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="index.html#about">About</a>
+      <a href="index.html#news">News</a>
+      <a href="publications.html">Publications</a>
+      <a href="index.html#projects">Projects</a>
+      <a href="blog.html">Blog</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap narrow">
+  <main class="content">
+    <section class="page-head">
+      <h2 class="page-title">Blog</h2>
+      <p>Readable summaries of research projects: the problem, the method, how it compares and what the experiments show.</p>
+    </section>
+
+    <section>
+      <ul class="post-list">
+        <li>
+          <a class="post-card" href="blog/fitkv.html">
+            <img src="blog/img/fitkv_overview.png" alt="FitKV: Fitting the KV Cache Budget to Each Input">
+            <div>
+              <span class="post-meta">October 2026 &middot; Efficient inference</span>
+              <span class="post-title">FitKV: Fitting the KV Cache Budget to Each Input</span>
+              <span class="post-desc">Each input gets its own KV cache budget from the agreement of its own attention, keeping 96% or more of full cache accuracy at 128 tokens.</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="blog/crossroads.html">
+            <img src="blog/img/crossroads_teaser.jpg" alt="Crossroads overview of agent sessions">
+            <div>
+              <span class="post-meta">August 2026 &middot; Visual analytics</span>
+              <span class="post-title">Crossroads: Visual Analytics for Agent Sessions</span>
+              <span class="post-desc">A visual analytics system that explains where an agent session spent its tokens and why it failed.</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="blog/hazep.html">
+            <img src="blog/img/hazep_hazard.svg" alt="HazEP hazard curve with triage zones">
+            <div>
+              <span class="post-meta">July 2026 &middot; LLM agents</span>
+              <span class="post-title">HazEP: Catching Agent Errors Before They Cascade</span>
+              <span class="post-desc">An online hazard model that predicts when an agent error is about to cascade, and intervenes while the run is still recoverable.</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="blog/trot.html">
+            <img src="blog/img/trot_results.svg" alt="TROT: Triage of Observation Tokens for Efficient LLM Agents">
+            <div>
+              <span class="post-meta">June 2026 &middot; LLM agents</span>
+              <span class="post-title">TROT: Triage of Observation Tokens for Efficient LLM Agents</span>
+              <span class="post-desc">Cost ordered triage of agent observations raises SWE-bench resolve rate while cutting tokens by half.</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="blog/context-churn.html">
+            <img src="blog/img/churn_cycle.svg" alt="The context churn cycle">
+            <div>
+              <span class="post-meta">April 2026 &middot; Agent efficiency</span>
+              <span class="post-title">Where Do the Tokens Go? Context Churn in Real World Agent Sessions</span>
+              <span class="post-desc">A study of real agent sessions: 96.9% of input tokens are re-reading context, and cheap fixes avoid most of the waste.</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a class="post-card" href="blog/signgraph.html">
+            <img src="blog/img/signgraph_overview.png" alt="SignGraph: Merging Models by the Patterns Their Signs Make">
+            <div>
+              <span class="post-meta">February 2026 &middot; Model merging</span>
+              <span class="post-title">SignGraph: Merging Models by the Patterns Their Signs Make</span>
+              <span class="post-desc">Grouping parameters by their sign pattern across tasks, and diffusing consensus over a Hamming graph, wins more merging slots than all baselines combined.</span>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+</div>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+</body>
+</html>

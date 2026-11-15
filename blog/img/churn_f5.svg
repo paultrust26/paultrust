@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 330" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="330" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">Re-read rate after each successive compaction</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">Share of post compaction reads that target files read before. n = sessions reaching that compaction.</text>
+<line x1="80" y1="260.0" x2="720" y2="260.0" stroke="#e5e7eb"/><text x="72" y="264.0" font-size="11" fill="#6b7280" text-anchor="end">40%</text>
+<line x1="80" y1="193.3" x2="720" y2="193.3" stroke="#e5e7eb"/><text x="72" y="197.3" font-size="11" fill="#6b7280" text-anchor="end">60%</text>
+<line x1="80" y1="126.7" x2="720" y2="126.7" stroke="#e5e7eb"/><text x="72" y="130.7" font-size="11" fill="#6b7280" text-anchor="end">80%</text>
+<line x1="80" y1="60.0" x2="720" y2="60.0" stroke="#e5e7eb"/><text x="72" y="64.0" font-size="11" fill="#6b7280" text-anchor="end">100%</text>
+<text x="110" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">1st</text><text x="110" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 36</text>
+<text x="192" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">2nd</text><text x="192" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 23</text>
+<text x="274" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">3rd</text><text x="274" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 19</text>
+<text x="356" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">4th</text><text x="356" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 13</text>
+<text x="438" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">5th</text><text x="438" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 9</text>
+<text x="520" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">6th</text><text x="520" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 7</text>
+<text x="602" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">7th</text><text x="602" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 4</text>
+<text x="684" y="280" font-size="11.5" fill="#1f2328" text-anchor="middle">8th</text><text x="684" y="296" font-size="10" fill="#6b7280" text-anchor="middle">n = 3</text>
+<polyline points="110.0,204.7 192.0,156.0 274.0,162.7 356.0,199.3 438.0,168.3 520.0,99.7 602.0,131.3 684.0,171.7" fill="none" stroke="#0b5cad" stroke-width="2.6" stroke-linejoin="round"/>
+<circle cx="110.0" cy="204.7" r="5" fill="#0b5cad" stroke="#0b5cad" stroke-width="2"/>
+<text x="110.0" y="192.7" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="middle">57%</text>
+<circle cx="192.0" cy="156.0" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="192.0" y="144.0" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">71%</text>
+<circle cx="274.0" cy="162.7" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="274.0" y="150.7" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">69%</text>
+<circle cx="356.0" cy="199.3" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="356.0" y="187.3" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">58%</text>
+<circle cx="438.0" cy="168.3" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="438.0" y="156.3" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">68%</text>
+<circle cx="520.0" cy="99.7" r="5" fill="#0b5cad" stroke="#0b5cad" stroke-width="2"/>
+<text x="520.0" y="87.7" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="middle">88%</text>
+<circle cx="602.0" cy="131.3" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="602.0" y="119.3" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">79%</text>
+<circle cx="684.0" cy="171.7" r="4" fill="#fff" stroke="#0b5cad" stroke-width="2"/>
+<text x="684.0" y="159.7" font-size="11.5" font-weight="500" fill="#6b7280" text-anchor="middle">66%</text>
+<text x="400.0" y="320" font-size="12" fill="#1f2328" text-anchor="middle">compaction number within a session</text>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 360" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="360" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">Average retention across eight models</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">Merged score as a share of each individually fine tuned score; strongest baseline in each setting shown</text>
+<line x1="100" y1="290.0" x2="740" y2="290.0" stroke="#e5e7eb"/><text x="94" y="294.0" font-size="11" fill="#6b7280" text-anchor="end">0%</text>
+<line x1="100" y1="235.0" x2="740" y2="235.0" stroke="#e5e7eb"/><text x="94" y="239.0" font-size="11" fill="#6b7280" text-anchor="end">25%</text>
+<line x1="100" y1="180.0" x2="740" y2="180.0" stroke="#e5e7eb"/><text x="94" y="184.0" font-size="11" fill="#6b7280" text-anchor="end">50%</text>
+<line x1="100" y1="125.0" x2="740" y2="125.0" stroke="#e5e7eb"/><text x="94" y="129.0" font-size="11" fill="#6b7280" text-anchor="end">75%</text>
+<line x1="100" y1="69.99999999999997" x2="740" y2="69.99999999999997" stroke="#e5e7eb"/><text x="94" y="73.99999999999997" font-size="11" fill="#6b7280" text-anchor="end">100%</text>
+<rect x="130" y="88.7" width="66" height="201.3" rx="4" fill="#0b5cad"/><text x="163" y="80.7" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">91.5</text><text x="163" y="306" font-size="10" fill="#6b7280" text-anchor="middle">SignGraph</text>
+<rect x="208" y="104.8" width="66" height="185.2" rx="4" fill="#b8bec6"/><text x="241" y="96.8" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">84.2</text><text x="241" y="306" font-size="10" fill="#6b7280" text-anchor="middle">DARE-TIES</text>
+<text x="202" y="326" font-size="12.5" font-weight="600" fill="#1f2328" text-anchor="middle">GLUE</text><text x="202" y="342" font-size="10.5" fill="#6b7280" text-anchor="middle">6 adapters, 48 slots</text>
+<rect x="340" y="121.5" width="66" height="168.5" rx="4" fill="#0b5cad"/><text x="373" y="113.5" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">76.6</text><text x="373" y="306" font-size="10" fill="#6b7280" text-anchor="middle">SignGraph</text>
+<rect x="418" y="134.7" width="66" height="155.3" rx="4" fill="#b8bec6"/><text x="451" y="126.7" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">70.6</text><text x="451" y="306" font-size="10" fill="#6b7280" text-anchor="middle">Breadcrumbs</text>
+<text x="412" y="326" font-size="12.5" font-weight="600" fill="#1f2328" text-anchor="middle">All tasks</text><text x="412" y="342" font-size="10.5" fill="#6b7280" text-anchor="middle">9 adapters, 72 slots</text>
+<rect x="550" y="141.3" width="66" height="148.7" rx="4" fill="#0b5cad"/><text x="583" y="133.3" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">67.6</text><text x="583" y="306" font-size="10" fill="#6b7280" text-anchor="middle">SignGraph</text>
+<rect x="628" y="153.2" width="66" height="136.8" rx="4" fill="#b8bec6"/><text x="661" y="145.2" font-size="12.5" font-weight="700" fill="#1f2328" text-anchor="middle">62.2</text><text x="661" y="306" font-size="10" fill="#6b7280" text-anchor="middle">Consensus-TIES</text>
+<text x="622" y="326" font-size="12.5" font-weight="600" fill="#1f2328" text-anchor="middle">Non-GLUE</text><text x="622" y="342" font-size="10.5" fill="#6b7280" text-anchor="middle">3 adapters, 24 slots</text>
+</svg>

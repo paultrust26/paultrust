@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="400" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">(a) Each step costs more than the last</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">Mean tokens processed per step</text>
+<line x1="70" y1="330.0" x2="350" y2="330.0" stroke="#e5e7eb"/><text x="62" y="334.0" font-size="11" fill="#6b7280" text-anchor="end">0K</text>
+<line x1="70" y1="267.5" x2="350" y2="267.5" stroke="#e5e7eb"/><text x="62" y="271.5" font-size="11" fill="#6b7280" text-anchor="end">40K</text>
+<line x1="70" y1="205.0" x2="350" y2="205.0" stroke="#e5e7eb"/><text x="62" y="209.0" font-size="11" fill="#6b7280" text-anchor="end">80K</text>
+<line x1="70" y1="142.5" x2="350" y2="142.5" stroke="#e5e7eb"/><text x="62" y="146.5" font-size="11" fill="#6b7280" text-anchor="end">120K</text>
+<line x1="70" y1="80.0" x2="350" y2="80.0" stroke="#e5e7eb"/><text x="62" y="84.0" font-size="11" fill="#6b7280" text-anchor="end">160K</text>
+<text x="70.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">0</text>
+<text x="210.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">50</text>
+<text x="350.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">100</text>
+<text x="210.0" y="368" font-size="12" fill="#1f2328" text-anchor="middle">step number</text>
+<polyline points="70.0,297.2 350.0,297.2" fill="none" stroke="#9aa1aa" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="72.8,297.2 210.0,178.4 350.0,153.4" fill="none" stroke="#0b5cad" stroke-width="2.8" stroke-linejoin="round"/>
+<circle cx="72.8" cy="297.2" r="4.5" fill="#0b5cad"/>
+<text x="82.8" y="317.2" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="start">21K</text>
+<circle cx="210.0" cy="178.4" r="4.5" fill="#0b5cad"/>
+<text x="218.0" y="168.4" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="start">97K</text>
+<circle cx="350.0" cy="153.4" r="4.5" fill="#0b5cad"/>
+<text x="342.0" y="143.4" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="end">113K</text>
+<text x="346" y="289.2" font-size="10.5" fill="#6b7280" text-anchor="end">if every step cost the same as step 1</text>
+<text x="420" y="30" font-size="13" font-weight="700" fill="#1f2328">(b) So total cost grows super linearly</text>
+<text x="420" y="48" font-size="11" fill="#6b7280">Cumulative tokens, from the fitted per step cost 21K + 0.5K &#183; i</text>
+<line x1="450" y1="330.0" x2="750" y2="330.0" stroke="#e5e7eb"/><text x="442" y="334.0" font-size="11" fill="#6b7280" text-anchor="end">0M</text>
+<line x1="450" y1="280.0" x2="750" y2="280.0" stroke="#e5e7eb"/><text x="442" y="284.0" font-size="11" fill="#6b7280" text-anchor="end">10M</text>
+<line x1="450" y1="230.0" x2="750" y2="230.0" stroke="#e5e7eb"/><text x="442" y="234.0" font-size="11" fill="#6b7280" text-anchor="end">20M</text>
+<line x1="450" y1="180.0" x2="750" y2="180.0" stroke="#e5e7eb"/><text x="442" y="184.0" font-size="11" fill="#6b7280" text-anchor="end">30M</text>
+<line x1="450" y1="130.0" x2="750" y2="130.0" stroke="#e5e7eb"/><text x="442" y="134.0" font-size="11" fill="#6b7280" text-anchor="end">40M</text>
+<line x1="450" y1="80.0" x2="750" y2="80.0" stroke="#e5e7eb"/><text x="442" y="84.0" font-size="11" fill="#6b7280" text-anchor="end">50M</text>
+<text x="450.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">0</text>
+<text x="525.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">100</text>
+<text x="600.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">200</text>
+<text x="675.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">300</text>
+<text x="750.0" y="348" font-size="11" fill="#6b7280" text-anchor="middle">400</text>
+<text x="600.0" y="368" font-size="12" fill="#1f2328" text-anchor="middle">session length (steps)</text>
+<polygon points="450.0,330.0 450.0,330.0 457.5,328.8 465.0,327.4 472.5,325.7 480.0,323.8 487.5,321.6 495.0,319.2 502.5,316.5 510.0,313.6 517.5,310.4 525.0,307.0 532.5,303.3 540.0,299.4 547.5,295.2 555.0,290.8 562.5,286.1 570.0,281.2 577.5,276.0 585.0,270.6 592.5,264.9 600.0,259.0 607.5,252.8 615.0,246.4 622.5,239.7 630.0,232.8 637.5,225.6 645.0,218.2 652.5,210.5 660.0,202.6 667.5,194.4 675.0,186.0 682.5,177.3 690.0,168.4 697.5,159.2 705.0,149.8 712.5,140.1 720.0,130.2 727.5,120.0 735.0,109.6 742.5,98.9 750.0,88.0 750.0,330.0" fill="#0b5cad" fill-opacity="0.08"/>
+<polyline points="450.0,330.0 750.0,288.0" fill="none" stroke="#9aa1aa" stroke-width="2" stroke-dasharray="6 5"/>
+<polyline points="450.0,330.0 457.5,328.8 465.0,327.4 472.5,325.7 480.0,323.8 487.5,321.6 495.0,319.2 502.5,316.5 510.0,313.6 517.5,310.4 525.0,307.0 532.5,303.3 540.0,299.4 547.5,295.2 555.0,290.8 562.5,286.1 570.0,281.2 577.5,276.0 585.0,270.6 592.5,264.9 600.0,259.0 607.5,252.8 615.0,246.4 622.5,239.7 630.0,232.8 637.5,225.6 645.0,218.2 652.5,210.5 660.0,202.6 667.5,194.4 675.0,186.0 682.5,177.3 690.0,168.4 697.5,159.2 705.0,149.8 712.5,140.1 720.0,130.2 727.5,120.0 735.0,109.6 742.5,98.9 750.0,88.0" fill="none" stroke="#0b5cad" stroke-width="2.8"/>
+<circle cx="525.0" cy="307.0" r="4.5" fill="#0b5cad"/><text x="517.0" y="298.0" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="end">4.6M</text>
+<circle cx="600.0" cy="259.0" r="4.5" fill="#0b5cad"/><text x="592.0" y="250.0" font-size="11.5" font-weight="700" fill="#1f2328" text-anchor="end">14M</text>
+<text x="466" y="102" font-size="12" font-weight="700" fill="#d97706">2&#215; longer &#8594; about 3 to 4&#215; the tokens</text>
+<text x="746.0" y="280.0" font-size="10.5" fill="#6b7280" text-anchor="end">flat cost per step</text>
+</svg>

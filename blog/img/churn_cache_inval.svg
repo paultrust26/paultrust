@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 330" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="330" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">(a) Why the cache is thrown away</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">568 invalidation events, 4.2 per session</text>
+<text x="30" y="84" font-size="12" font-weight="600" fill="#1f2328">Pause over 5 minutes</text><text x="30" y="99" font-size="10.5" fill="#6b7280">cache time to live expires</text>
+<rect x="30" y="106" width="285" height="24" rx="4" fill="#b42318" fill-opacity="0.85"/><text x="323" y="123" font-size="12.5" font-weight="700" fill="#1f2328">62%</text>
+<text x="30" y="158" font-size="12" font-weight="600" fill="#1f2328">Compaction</text><text x="30" y="173" font-size="10.5" fill="#6b7280">history replaced by a summary</text>
+<rect x="30" y="180" width="106" height="24" rx="4" fill="#d97706" fill-opacity="0.85"/><text x="144" y="197" font-size="12.5" font-weight="700" fill="#1f2328">23%</text>
+<text x="30" y="232" font-size="12" font-weight="600" fill="#1f2328">Configuration change</text><text x="30" y="247" font-size="10.5" fill="#6b7280">model switch, tool reconnect</text>
+<rect x="30" y="254" width="69" height="24" rx="4" fill="#9aa1aa" fill-opacity="0.85"/><text x="107" y="271" font-size="12.5" font-weight="700" fill="#1f2328">15%</text>
+<text x="430" y="30" font-size="13" font-weight="700" fill="#1f2328">(b) Cache benefit by action</text>
+<text x="430" y="48" font-size="11" fill="#6b7280">Tokens read from cache per token written to it</text>
+<text x="504" y="83" font-size="12" fill="#1f2328" text-anchor="end">Edit</text><rect x="514" y="68" width="198" height="22" rx="4" fill="#0b5cad" fill-opacity="0.85"/><text x="720" y="84" font-size="12" font-weight="700" fill="#1f2328">79&#215;</text>
+<text x="504" y="123" font-size="12" fill="#1f2328" text-anchor="end">Bash</text><rect x="514" y="108" width="90" height="22" rx="4" fill="#0b5cad" fill-opacity="0.85"/><text x="612" y="124" font-size="12" font-weight="700" fill="#1f2328">36&#215;</text>
+<text x="504" y="163" font-size="12" fill="#1f2328" text-anchor="end">Read</text><rect x="514" y="148" width="90" height="22" rx="4" fill="#0b5cad" fill-opacity="0.85"/><text x="612" y="164" font-size="12" font-weight="700" fill="#1f2328">36&#215;</text>
+<text x="504" y="203" font-size="12" fill="#1f2328" text-anchor="end">Write</text><rect x="514" y="188" width="85" height="22" rx="4" fill="#0b5cad" fill-opacity="0.85"/><text x="607" y="204" font-size="12" font-weight="700" fill="#1f2328">34&#215;</text>
+<text x="504" y="243" font-size="12" fill="#1f2328" text-anchor="end">Subagent</text><rect x="514" y="228" width="16" height="22" rx="4" fill="#d97706" fill-opacity="0.85"/><text x="538" y="244" font-size="12" font-weight="700" fill="#1f2328">6.4&#215;</text>
+<text x="504" y="283" font-size="12" fill="#1f2328" text-anchor="end">Web fetch</text><rect x="514" y="268" width="9" height="22" rx="4" fill="#d97706" fill-opacity="0.85"/><text x="531" y="284" font-size="12" font-weight="700" fill="#1f2328">3.5&#215;</text>
+</svg>

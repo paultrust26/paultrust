@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 330" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="330" fill="#fff"/>
+<text x="30" y="30" font-size="13" font-weight="700" fill="#1f2328">(a) Verbose sessions compact 96 tools sooner</text>
+<text x="30" y="48" font-size="11" fill="#6b7280">Mean tool calls before the first compaction</text>
+<text x="30" y="98" font-size="12" font-weight="600" fill="#1f2328">Low bloat</text><text x="30" y="114" font-size="10.5" fill="#6b7280">results under 1.6K chars</text>
+<rect x="30" y="122" width="237" height="26" rx="4" fill="#9cc0ea"/><text x="275" y="140" font-size="12.5" font-weight="700" fill="#1f2328">148 tools</text>
+<text x="30" y="184" font-size="12" font-weight="600" fill="#1f2328">High bloat</text><text x="30" y="200" font-size="10.5" fill="#6b7280">results over 3.2K chars</text>
+<rect x="30" y="208" width="83" height="26" rx="4" fill="#0b5cad"/><text x="121" y="226" font-size="12.5" font-weight="700" fill="#1f2328">52 tools</text>
+<text x="440" y="30" font-size="13" font-weight="700" fill="#1f2328">(b) Compaction resets cost, briefly</text>
+<text x="440" y="48" font-size="11" fill="#6b7280">Mean tokens per step before and after (124 compactions)</text>
+<line x1="470" y1="270.0" x2="750" y2="270.0" stroke="#e5e7eb"/><text x="462" y="274.0" font-size="11" fill="#6b7280" text-anchor="end">0K</text>
+<line x1="470" y1="207.5" x2="750" y2="207.5" stroke="#e5e7eb"/><text x="462" y="211.5" font-size="11" fill="#6b7280" text-anchor="end">50K</text>
+<line x1="470" y1="145.0" x2="750" y2="145.0" stroke="#e5e7eb"/><text x="462" y="149.0" font-size="11" fill="#6b7280" text-anchor="end">100K</text>
+<line x1="470" y1="82.5" x2="750" y2="82.5" stroke="#e5e7eb"/><text x="462" y="86.5" font-size="11" fill="#6b7280" text-anchor="end">150K</text>
+<rect x="500" y="71.2" width="40" height="198.8" rx="3" fill="#9aa1aa"/><text x="520" y="65.2" font-size="11" font-weight="700" fill="#1f2328" text-anchor="middle">159K</text>
+<rect x="548" y="218.8" width="40" height="51.2" rx="3" fill="#0b5cad"/><text x="568" y="212.8" font-size="11" font-weight="700" fill="#1f2328" text-anchor="middle">41K</text>
+<text x="544" y="288" font-size="11.5" fill="#1f2328" text-anchor="middle">Total tokens</text><text x="544" y="304" font-size="11" font-weight="700" fill="#1a7f37" text-anchor="middle">&#8722;74%</text>
+<rect x="630" y="77.5" width="40" height="192.5" rx="3" fill="#9aa1aa"/><text x="650" y="71.5" font-size="11" font-weight="700" fill="#1f2328" text-anchor="middle">154K</text>
+<rect x="678" y="225.0" width="40" height="45.0" rx="3" fill="#0b5cad"/><text x="698" y="219.0" font-size="11" font-weight="700" fill="#1f2328" text-anchor="middle">36K</text>
+<text x="674" y="288" font-size="11.5" fill="#1f2328" text-anchor="middle">Cache reads</text><text x="674" y="304" font-size="11" font-weight="700" fill="#1a7f37" text-anchor="middle">&#8722;76%</text>
+<rect x="650" y="306" width="10" height="10" fill="#9aa1aa"/><text x="666" y="315" font-size="10.5" fill="#6b7280">before</text><rect x="710" y="306" width="10" height="10" fill="#0b5cad"/><text x="726" y="315" font-size="10.5" fill="#6b7280">after</text>
+</svg>

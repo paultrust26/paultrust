@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TROT | Paul Trust</title>
+<meta name="description" content="A cost ordered triage of agent observations that raises resolve rate while halving tokens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">TROT:</p>
+  <h1 class="main-title">Triage of observation tokens for efficient LLM agents</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>June 2026</p></div>
+    <div><h4>Paper</h4><p>Under review, 2026</p></div>
+  </div>
+
+  <div class="res-links">
+    <a class="res-btn" target="_blank" rel="noopener" href="https://openreview.net/pdf?id=OgkJ87Gu35"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M4 1h5l4 4v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm5 1.5V5h2.5L9 2.5zM5 8h6v1H5zm0 2h6v1H5zm0 2h4v1H5z"/></svg>Paper</a>
+    <a class="res-btn" target="_blank" rel="noopener" href="https://github.com/paultrust26/TROT"><svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>Coding agents drown in their own observations: file views, test logs and tool output pile up in the context, and what mattered at step 5 is often dead weight by step 25. Compressing every observation with an extra LLM saves tokens but adds dozens of calls and <strong>sometimes throws away the one detail the agent needed</strong>.</p>
+    <p>TROT triages each observation in <strong>order of cost</strong>: free deterministic rules first, then a tiny learned gate, and an auxiliary LLM only for the ambiguous remainder, while a history compressor removes stale content from the context.</p>
+    <p>On SWE-bench Verified it is the only method that improves <strong>both</strong> resolve rate and cost: <strong>50.6% resolved with 55% fewer tokens</strong> on Sonnet 4.6, and 46.1% with 46% fewer on Devstral 24B, using 6&times; fewer auxiliary LLM calls than uniform reflection.</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Resolve</p>
+      <p class="q">Does compressing the context hurt the agent?</p>
+      <p class="src">SWE-bench Verified, 89 held out tasks, Sonnet 4.6</p>
+      <p class="big"><strong>50.6%</strong>resolved, up from 45.9% for the unmodified agent</p>
+    </div>
+    <div class="hl">
+      <p class="label">Save</p>
+      <p class="q">How much context can be dropped?</p>
+      <p class="src">Total tokens, agent and auxiliary calls combined</p>
+      <p class="big"><strong>55%</strong>fewer tokens than the unmodified agent</p>
+    </div>
+    <div class="hl">
+      <p class="label">Spend</p>
+      <p class="q">What does each solved task cost?</p>
+      <p class="src">Total tokens divided by resolved tasks</p>
+      <p class="big"><strong>&minus;59%</strong>tokens per resolution on Sonnet 4.6</p>
+    </div>
+  </div>
+
+  <p>Most agents follow the ReAct loop<a class="cite-ref" href="#ref-1">[1]</a>: reason, act, and receive the full tool output at every step. Over a long task the context fills with observations, which make up most of the tokens an agent consumes<a class="cite-ref" href="#ref-2">[2, 3]</a>. A file read that informed an early edit still occupies context long after its value has expired, and re-reading an unchanged file pays again for nothing new.</p>
+  <p>A recent approach, uniform LLM reflection, asks an auxiliary model to compress every observation above a size threshold<a class="cite-ref" href="#ref-3">[3]</a>. It does save tokens, but it adds roughly one auxiliary call per observation, and the summariser occasionally removes the error detail or diagnostic line that the agent later needs.</p>
+
+  <h2 class="sec">The idea: most decisions need no reasoning</h2>
+  <p>Many compression decisions can be made from the surface of an observation. Edit confirmations always re-display the file just written. Submission output is identical boilerplate. A file read twice with no edit in between contains the same content. In 100 baseline trajectories, these deterministic patterns account for <strong>49.3% of all observation tokens</strong>.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:600px">
+      <thead><tr><th>Waste category</th><th>Share of observation tokens</th><th>Handled by</th></tr></thead>
+      <tbody>
+        <tr><td>Stale file re-reads</td><td class="num">15.8%</td><td class="num">History deduplication</td></tr>
+        <tr><td>Submission boilerplate</td><td class="num">14.8%</td><td class="num">Delivery time rule</td></tr>
+        <tr><td>Edit confirmation re-display</td><td class="num">10.8%</td><td class="num">Delivery time rule</td></tr>
+        <tr><td>Repeated long output</td><td class="num">6.9%</td><td class="num">History deduplication</td></tr>
+        <tr><td>Passing test detail</td><td class="num">0.9%</td><td class="num">Delivery time rule</td></tr>
+        <tr style="background:var(--accent-soft)"><td>Total deterministic</td><td class="num">49.3%</td><td class="num">Zero cost</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 1.</strong> Where observation tokens are wasted, from 100 baseline trajectories.</p>
+  </div>
+
+  <h2 class="sec">Method</h2>
+  <figure>
+    <img src="img/trot_pipeline.png" alt="TROT pipeline: tool output passes a deterministic compressor, then a learned gate that chooses skip, summary or full, with an auxiliary LLM for summaries, and a history compressor that prunes the context">
+    <figcaption><strong>Figure 1.</strong> The TROT pipeline. Each observation passes three layers in order of cost. A history compressor (dashed) runs before each model call and removes stale content from the accumulated context.</figcaption>
+  </figure>
+  <p class="exp-label">Layer 1</p>
+  <h3 class="exp">Deterministic rules, at zero cost</h3>
+  <p>Rules either <strong>protect</strong> content that must never be compressed, such as error traces and the first output of a command, or <strong>compress</strong> known waste with pattern matching. The rules were discovered offline from completed trajectories and checked with weak supervision.</p>
+  <p class="exp-label">Layer 2</p>
+  <h3 class="exp">A learned gate, at near zero cost</h3>
+  <p>For the rest, a small classifier per tool type predicts the fidelity an observation deserves (skip, summary or full) from 50 features of the trajectory state, such as whether the file is edited later. It is trained on 152,287 observations from SWE-smith trajectories<a class="cite-ref" href="#ref-4">[4]</a> with <strong>labels taken from hindsight</strong>: what the agent actually did next. No human annotation or reinforcement learning is needed.</p>
+  <p class="exp-label">Layer 3</p>
+  <h3 class="exp">Selective LLM reflection</h3>
+  <p>Only observations that are still large after gating go to an auxiliary LLM, about 5 calls per task against 30 for uniform reflection. Separately, a <strong>history compressor</strong> replaces stale re-reads and superseded content in the accumulated context before every model call.</p>
+
+  <h2 class="sec">Baselines and setup</h2>
+  <p>Agents run in a SWE-agent style loop<a class="cite-ref" href="#ref-5">[5]</a> on 89 tasks from SWE-bench Verified<a class="cite-ref" href="#ref-6">[6]</a>, none of which was used for rule discovery, training or tuning, with a 50 step budget. Two models are tested: Sonnet 4.6 and the open Devstral 24B. Baselines are the unmodified agent; TACO, which evolves compression rules<a class="cite-ref" href="#ref-7">[7]</a>; AgentDiet, which reflects on every observation over 500 tokens<a class="cite-ref" href="#ref-3">[3]</a>; truncation, which keeps the head and the error tail; and a sliding window that masks old observations<a class="cite-ref" href="#ref-2">[2]</a>.</p>
+
+  <h2 class="sec">Experiments</h2>
+  <p class="exp-label">Experiment 1</p>
+  <h3 class="exp">Can an agent see less and solve more?</h3>
+  <figure>
+    <img src="img/trot_results.svg" alt="Scatter of resolve rate against token savings for each method on two models; TROT is in the top right on both">
+    <figcaption><strong>Figure 2.</strong> Resolve rate against token savings for every method on both models. TROT is the only method above and to the right of the unmodified agent on both.</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:720px">
+      <thead><tr><th>Method</th><th>Sonnet 4.6 resolve</th><th>Sonnet 4.6 savings</th><th>Devstral 24B resolve</th><th>Devstral 24B savings</th></tr></thead>
+      <tbody>
+        <tr><td>Unmodified agent</td><td class="num">45.9%</td><td class="num"></td><td class="num">44.9%</td><td class="num"></td></tr>
+        <tr><td>TACO</td><td class="num">47.1%</td><td class="num">&minus;10%</td><td class="num">43.8%</td><td class="num">+9%</td></tr>
+        <tr><td>AgentDiet</td><td class="num">42.4%</td><td class="num">+30%</td><td class="num">44.9%</td><td class="num">+13%</td></tr>
+        <tr><td>Truncation</td><td class="num">38.8%</td><td class="num">+19%</td><td class="num">41.6%</td><td class="num">+11%</td></tr>
+        <tr><td>Sliding window</td><td class="num">37.6%</td><td class="num">+26%</td><td class="num">38.2%</td><td class="num">+38%</td></tr>
+        <tr style="background:var(--accent-soft)"><td>TROT</td><td class="num">50.6%</td><td class="num">+55%</td><td class="num">46.1%</td><td class="num">+46%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 2.</strong> Main results. Savings are 1 minus method tokens over baseline tokens; negative means more tokens than the baseline.</p>
+  </div>
+  <p>Every other method trades one goal for the other. AgentDiet saves tokens but lowers resolve on Sonnet; TACO raises resolve but spends 10% more tokens; the sliding window saves aggressively but costs 7 to 8 points. Showing the agent less <em>improves</em> resolution, which is consistent with two effects: a shorter context is easier to keep track of, and blocking redundant re-reads pushes the agent to try something new. Agents with TROT re-read files 4.2 times on average, against 6.8 in failed baseline runs.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:520px">
+      <thead><tr><th>Method</th><th>Sonnet 4.6</th><th>Devstral 24B</th></tr></thead>
+      <tbody>
+        <tr style="background:var(--accent-soft)"><td>TROT</td><td class="num">571K (&minus;59%)</td><td class="num">758K (&minus;48%)</td></tr>
+        <tr><td>AgentDiet</td><td class="num">1,073K</td><td class="num">1,268K</td></tr>
+        <tr><td>Sliding window</td><td class="num">1,271K</td><td class="num">1,055K</td></tr>
+        <tr><td>TACO</td><td class="num">1,514K</td><td class="num">1,352K</td></tr>
+        <tr><td>Unmodified agent</td><td class="num">1,410K</td><td class="num">1,449K</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 3.</strong> Tokens per resolved task (lower is better).</p>
+  </div>
+
+  <p class="exp-label">Experiment 2</p>
+  <h3 class="exp">Which parts carry the gain?</h3>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:520px">
+      <thead><tr><th>Variant (Devstral 24B)</th><th>Resolve</th><th>Savings</th></tr></thead>
+      <tbody>
+        <tr><td>TROT, 50 steps</td><td class="num">46.1%</td><td class="num">+46%</td></tr>
+        <tr><td>TROT, 75 steps</td><td class="num">53.9%</td><td class="num">+27%</td></tr>
+        <tr><td>Without critical bypass</td><td class="num">38.2%</td><td class="num">+44%</td></tr>
+        <tr><td>Without learned gate</td><td class="num">34.8%</td><td class="num">+44%</td></tr>
+        <tr><td>Without history compressor</td><td class="num">28.1%</td><td class="num">+4%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 4.</strong> Extended budget and component ablations. Each ablation removes one component from the 50 step system.</p>
+  </div>
+  <p>The history compressor matters most: without it, stale observations accumulate, resolve falls 18 points and the savings almost disappear. Removing the gate or the critical bypass also costs 8 to 11 points. Among failed runs, 17 of 47 hit the 50 step limit while still making progress, well below the context limit, so the step budget rather than context length is the binding constraint. With 75 steps, TROT reaches 53.9%, nine points above the unmodified agent.</p>
+
+  <p class="exp-label">Experiment 3</p>
+  <h3 class="exp">How safe is the learned gate?</h3>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:600px">
+      <thead><tr><th>Tool</th><th>Accuracy</th><th>Under served</th><th>Over served</th><th>Token savings</th></tr></thead>
+      <tbody>
+        <tr><td>Read</td><td class="num">85.4%</td><td class="num">4.0%</td><td class="num">10.6%</td><td class="num">59.5%</td></tr>
+        <tr><td>Bash</td><td class="num">92.6%</td><td class="num">1.3%</td><td class="num">6.1%</td><td class="num">44.0%</td></tr>
+        <tr><td>Test</td><td class="num">90.4%</td><td class="num">4.5%</td><td class="num">5.2%</td><td class="num">83.9%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 5.</strong> Gate accuracy per tool. Under service, serving an observation at too low a fidelity, is the risk that matters.</p>
+  </div>
+  <p>Information loss is rare: at most 4.5% of observations are served at too low a fidelity, and mistakes fall between adjacent tiers, so the gate degrades gracefully. Test output compresses best, since most of a passing test log reduces to a one line summary.</p>
+
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;TROT: Triage of observation tokens for efficient LLM agents.&rdquo; June 2026. https://paultrust26.github.io/paultrust/blog/trot.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026trotblog,
+  title        = {{TROT: Triage of observation tokens for efficient LLM agents}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = jun,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/trot.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">ReAct: Synergizing Reasoning and Acting in Language Models</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2210.03629">[PDF]</a><span class="ra">Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K. and Cao, Y., 2023. International Conference on Learning Representations (ICLR).</span></li>
+      <li id="ref-2"><span class="rt">The Complexity Trap: Simple Observation Masking Is as Efficient as LLM Summarization for Agent Context Management</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2508.21433">[PDF]</a><span class="ra">Lindenbauer, T., Slinko, I., Felder, L., Bogomolov, E. and Zharov, Y., 2025. Deep Learning for Code Workshop (DL4C) at NeurIPS.</span></li>
+      <li id="ref-3"><span class="rt">Reducing Cost of LLM Agents with Trajectory Reduction</span><a class="rl" target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/3797084">[PDF]</a><span class="ra">Xiao, Y.A., Gao, P., Peng, C. and Xiong, Y., 2026. Proceedings of the ACM on Software Engineering, 3 (FSE), pp. 1241 to 1263.</span></li>
+      <li id="ref-4"><span class="rt">SWE-smith: Scaling Data for Software Engineering Agents</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2504.21798">[PDF]</a><span class="ra">Yang, J., Lieret, K., Jimenez, C., Wettig, A., Khandpur, K., Zhang, Y., Hui, B., Press, O., Schmidt, L. and Yang, D., 2025. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-5"><span class="rt">SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2405.15793">[PDF]</a><span class="ra">Yang, J., Jimenez, C.E., Wettig, A., Lieret, K., Yao, S., Narasimhan, K. and Press, O., 2024. Advances in Neural Information Processing Systems (NeurIPS).</span></li>
+      <li id="ref-6"><span class="rt">SWE-bench: Can Language Models Resolve Real-world GitHub Issues?</span><a class="rl" target="_blank" rel="noopener" href="https://openreview.net/forum?id=VTF8yNQM66">[PDF]</a><span class="ra">Jimenez, C.E., Yang, J., Wettig, A., Yao, S., Pei, K., Press, O. and Narasimhan, K., 2024. International Conference on Learning Representations (ICLR).</span></li>
+      <li id="ref-7"><span class="rt">A Self-Evolving Framework for Efficient Terminal Agents via Observational Context Compression</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2604.19572">[PDF]</a><span class="ra">Ren, J., Wu, S., Li, Y., Zhu, K., Xu, S., Feng, B., Yuan, R., Zhang, W., Batista-Navarro, R., Yang, J. and Lin, C., 2026. arXiv preprint arXiv:2604.19572.</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>

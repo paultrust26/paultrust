@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 430" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif"><rect width="780" height="430" fill="#fff"/>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker></defs>
+<rect x="290" y="30" width="200" height="104" rx="12" fill="#eaf1fb" stroke="#0b5cad" stroke-opacity="0.45"/>
+<text x="306" y="54" font-size="11" font-weight="700" fill="#0b5cad" letter-spacing="0.5">L1  ACQUISITION</text>
+<text x="306" y="75" font-size="12.5" font-weight="600" fill="#1f2328">Verbose tool outputs</text>
+<text x="306" y="91" font-size="12.5" font-weight="600" fill="#1f2328">fill the context window</text>
+<text x="306" y="111" font-size="10.5" fill="#6b7280">High bloat sessions hit compaction</text>
+<text x="306" y="125" font-size="10.5" fill="#6b7280">after 52 tools vs 148</text>
+<rect x="540" y="180" width="200" height="104" rx="12" fill="#fdf3dc" stroke="#d97706" stroke-opacity="0.45"/>
+<text x="556" y="204" font-size="11" font-weight="700" fill="#d97706" letter-spacing="0.5">L2  LOSS</text>
+<text x="556" y="225" font-size="12.5" font-weight="600" fill="#1f2328">Compaction summarises</text>
+<text x="556" y="241" font-size="12.5" font-weight="600" fill="#1f2328">paths, not file contents</text>
+<text x="556" y="261" font-size="10.5" fill="#6b7280">Per step tokens drop 74%</text>
+<text x="556" y="275" font-size="10.5" fill="#6b7280">then regrow within ~30 steps</text>
+<rect x="290" y="300" width="200" height="104" rx="12" fill="#fdecec" stroke="#b42318" stroke-opacity="0.45"/>
+<text x="306" y="324" font-size="11" font-weight="700" fill="#b42318" letter-spacing="0.5">L3  RECOVERY</text>
+<text x="306" y="345" font-size="12.5" font-weight="600" fill="#1f2328">The agent re-reads</text>
+<text x="306" y="361" font-size="12.5" font-weight="600" fill="#1f2328">what it already knew</text>
+<text x="306" y="381" font-size="10.5" fill="#6b7280">74% of all reads are re-reads</text>
+<text x="306" y="395" font-size="10.5" fill="#6b7280">6.6 tools before useful work</text>
+<rect x="40" y="180" width="200" height="104" rx="12" fill="#eef2f7" stroke="#374151" stroke-opacity="0.45"/>
+<text x="56" y="204" font-size="11" font-weight="700" fill="#374151" letter-spacing="0.5">L4  DELEGATION</text>
+<text x="56" y="225" font-size="12.5" font-weight="600" fill="#1f2328">Subagents start blind</text>
+<text x="56" y="241" font-size="12.5" font-weight="600" fill="#1f2328">and return bloated results</text>
+<text x="56" y="261" font-size="10.5" fill="#6b7280">97.8% of delegations share</text>
+<text x="56" y="275" font-size="10.5" fill="#6b7280">no parent context</text>
+<path d="M495,95 C560,105 610,135 628,176" stroke="#6b7280" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+<path d="M628,288 C610,330 560,352 494,354" stroke="#6b7280" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+<path d="M290,330 C230,330 150,320 140,290" stroke="#6b7280" stroke-width="1.6" fill="none" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+<path d="M390,298 L390,140" stroke="#6b7280" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+<path d="M140,178 C150,120 220,90 286,84" stroke="#6b7280" stroke-width="1.6" fill="none" marker-end="url(#ar)"/>
+<text x="398" y="225" font-size="11" fill="#6b7280">re-reads add</text><text x="398" y="240" font-size="11" fill="#6b7280">new output</text>
+<text x="610" y="128" font-size="11" fill="#6b7280">context full</text>
+<text x="566" y="372" font-size="11" fill="#6b7280">state lost</text>
+<text x="150" y="342" font-size="11" fill="#6b7280">rediscovery</text>
+<text x="78" y="128" font-size="11" fill="#6b7280">large returns</text>
+<circle cx="390" cy="217" r="0" />
+<text x="560" y="40" font-size="12" font-weight="700" fill="#1f2328">Each compaction adds</text><text x="560" y="58" font-size="12" font-weight="700" fill="#1f2328">~150 tools to a session</text>
+<text x="560" y="76" font-size="11" fill="#6b7280">re-read rate climbs 57% &#8594; 88%</text><text x="560" y="91" font-size="11" fill="#6b7280">from the 1st to the 6th compaction</text>
+</svg>

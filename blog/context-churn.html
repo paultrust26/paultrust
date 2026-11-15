@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where Do the Tokens Go? | Paul Trust</title>
+<meta name="description" content="An empirical study of real LLM agent sessions: where tokens go, why agents re-read what they already knew, and what cheap fixes recover.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="../index.html">Paul Trust</a>
+    <nav class="menu">
+      <a href="../index.html#news">News</a>
+      <a href="../publications.html">Publications</a>
+      <a href="../blog.html">Blog</a>
+      <a href="../index.html#experience">Experience</a>
+      <a class="menu-cv" target="_blank" rel="noopener" href="../cv.pdf">CV</a>
+    </nav>
+  </div>
+</header>
+
+<article class="article">
+  <p class="kicker-title">Where do the tokens go?</p>
+  <h1 class="main-title">Context churn in real world LLM agent sessions</h1>
+
+  <div class="meta-grid">
+    <div><h4>Author</h4><p class="author">Paul Trust</p></div>
+    <div><h4>Published</h4><p>April 2026</p></div>
+  </div>
+
+  <div class="tldr">
+    <p class="label">TL;DR</p>
+    <p>We studied <strong>real, interactive LLM agent sessions</strong>: 22,692 tool calls, 125 context compactions and 246 delegations to subagents. Almost none of the cost is thinking. <strong>96.9% of all input tokens are the agent re-reading its own context</strong>, and the agent's reasoning is only 6.6% of what it writes.</p>
+    <p>The waste compounds. Verbose tool outputs fill the context, compaction throws away file contents, and the agent re-reads what it already knew, which fills the context again. We call this loop <strong>context churn</strong>. Only 26% of file reads bring in new information.</p>
+    <p>The same signatures appear in <strong>318K autonomous trajectories</strong>, so churn is a property of tool using agents, not of one product. Cheap fixes help: in trace replay, <strong>keeping the working set across compaction avoids 62% of re-reads</strong> and capping tool outputs saves 63% of context.</p>
+  </div>
+
+  <div class="highlights">
+    <div class="hl">
+      <p class="label">Account</p>
+      <p class="q">Where does the token budget actually go?</p>
+      <p class="src">Per turn accounting over 4.7 billion input tokens</p>
+      <p class="big"><strong>96.9%</strong>of input tokens are cache reads of prior context</p>
+    </div>
+    <div class="hl">
+      <p class="label">Diagnose</p>
+      <p class="q">How much reading is new information?</p>
+      <p class="src">5,801 file reads, classified by cause</p>
+      <p class="big"><strong>26%</strong>of reads are first reads; the rest are re-reads</p>
+    </div>
+    <div class="hl">
+      <p class="label">Fix</p>
+      <p class="q">What can be recovered without changing the agent?</p>
+      <p class="src">Trace replay of four lightweight policies</p>
+      <p class="big"><strong>62%</strong>of re-reads avoided by persisting the top 10 files</p>
+    </div>
+  </div>
+
+  <p>LLM agents now do sustained work in real developer environments: reading files, editing code and documents, running commands, reviewing pull requests and delegating subtasks to subagents. All of it competes for one finite resource, the context window. Every file read, test log, edit diff, compaction summary and subagent reply has to fit.</p>
+  <p>Recent work has started to measure agent token economics<a class="cite-ref" href="#ref-1">[1, 2, 3, 4]</a>, but always on benchmarks: short, single issue, autonomous runs in a single context window. Real use looks different. A developer works with an agent for hours or days, asks questions, corrects it, changes direction, hits the context limit and carries on. This post summarises the first study of where tokens go in that setting.</p>
+
+  <h2 class="sec">The data</h2>
+  <p>Each session is an interactive conversation with a coding agent, not a benchmark run. Sessions range from 1 to 2,385 turns (median 67), and 27 exceed 500 tool calls. Most tool calls are Bash (44.4%), Read (25.5%) and Edit (23.6%). About 28% of sessions reach at least one compaction, where the system replaces the full history with a structured summary of about 11.7K characters. To test whether the findings generalise, we compare against 318,115 autonomous trajectories from SWE-Zero<a class="cite-ref" href="#ref-5">[5]</a>, which have no human in the loop, no compaction and no delegation.</p>
+
+  <h2 class="sec">Where the tokens go</h2>
+  <p class="exp-label">Finding 1</p>
+  <h3 class="exp">The agent mostly pays to re-read itself</h3>
+  <p>Across all sessions, input tokens total 4.71 billion. Of these, <strong>96.9% are cache reads</strong>: prior context processed again on every turn. New observations entering the context for the first time are 3.1%, and fresh input from the system and the user is 0.03%. The agent's own output is 21.5 million tokens, and of that, 76.9% is tool call arguments, 16.5% is text for the user, and only <strong>6.6% is reasoning</strong>.</p>
+
+  <figure>
+    <img src="img/churn_cache.svg" alt="Bar chart: cache reads per turn grow from 64K tokens in the first decile of a session to 151K in the last, while the input to output ratio grows from 134 to 341">
+    <figcaption><strong>Figure 1.</strong> Mean cache reads per turn by position in the session (sessions with at least 10 tool calls). Cache reads grow 2.4&times;, from 64K to 151K tokens per turn, while the agent's output stays near 500 tokens. The ratio of tokens read to tokens written grows from 134&times; to 341&times;.</figcaption>
+  </figure>
+
+  <p>Because every turn re-reads everything before it, the cost of a single step grows roughly linearly with its position: 21K tokens at step 1, 97K at step 50 and 113K at step 100. Cumulative cost is therefore super linear. A session twice as long costs about four times as much. This is an agent specific scaling law, distinct from scaling reasoning at test time<a class="cite-ref" href="#ref-8">[8]</a>: it is driven by observations accumulating in context, not by deliberate thought.</p>
+
+  <figure>
+    <img src="img/churn_growth.svg" alt="Left: mean tokens per step rise from 21K at step 1 to 97K at step 50 and 113K at step 100. Right: cumulative tokens curve upward, reaching 4.6M at 100 steps and 14M at 200 steps, far above a flat cost line">
+    <figcaption><strong>Figure 2.</strong> (a) Mean tokens processed per step, averaged over sessions: 21K at step 1, 97K at step 50 and 113K at step 100, against a dashed line for a flat cost per step. (b) Cumulative tokens implied by the fitted per step cost of 21K + 0.5K &middot; <em>i</em>. Because each step re-reads everything before it, total cost grows with the square of session length: 4.6M tokens at 100 steps and about 14M at 200.</figcaption>
+  </figure>
+
+  <p class="exp-label">Finding 2</p>
+  <h3 class="exp">A near perfect cache hit rate still leaves most of the cost</h3>
+  <p>With 96.9% of input served from cache, one might expect cost to be negligible. It is not. Priced at list rates, where a cache read costs a tenth of fresh input, writing to the cache costs 1.25&times; and output costs 5&times;, <strong>the 96.9% hit rate saves only 84.5% of cost</strong>. Cache reads are still 61% of spend through sheer volume, and cache writes, only 3.1% of tokens, are a quarter of it.</p>
+  <figure>
+    <img src="img/churn_cost.svg" alt="Two stacked columns: cache reads are 96.9 percent of tokens but 61 percent of cost; cache creation is 3.1 percent of tokens but 24.5 percent of cost; output is 0.45 percent of tokens but 14.4 percent of cost">
+    <figcaption><strong>Figure 3.</strong> Share of tokens processed against share of dollar cost, by token category. Cheap tokens dominate volume; expensive ones dominate the bill.</figcaption>
+  </figure>
+  <p>What predicts cost is not the cache but the session. <strong>Session length explains 94% of the variance in cost</strong> (R<sup>2</sup> = 0.94), while cache hit rate explains 24%. The most expensive tenth of sessions account for 56.8% of all spend, with the same average hit rate as everyone else.</p>
+
+  <p class="exp-label">Finding 3</p>
+  <h3 class="exp">Cache invalidation is the largest avoidable cost</h3>
+  <p>Sometimes the whole cached prefix is discarded and rebuilt from scratch. We detect 568 such invalidations, 4.2 per session. Each one spikes cache creation to 41&times; a normal turn, and in total <strong>30.8% of all cache creation tokens are spent rebuilding cache that already existed</strong>. The main cause is ordinary human behaviour: 62% of invalidations happen because the developer paused for longer than the five minute cache lifetime, to review code or think.</p>
+  <figure>
+    <img src="img/churn_cache_inval.svg" alt="Left: 62 percent of cache invalidations come from pauses over five minutes, 23 percent from compaction, 15 percent from configuration changes. Right: cache benefit ratio by action, 79 for Edit down to 3.5 for web fetch">
+    <figcaption><strong>Figure 4.</strong> (a) Causes of cache invalidation. (b) Tokens read from cache per token written, by action. Edits and shell commands reuse the cache well; subagent calls and web fetches inject large amounts of new content.</figcaption>
+  </figure>
+  <p>Not every action is equal. Edits append a few tokens and reuse the whole prefix, while subagent results and fetched web pages bring in large blocks of new content. Being cache friendly is not the same as being context friendly, though: reads reuse the cache well, yet they are the main reason the context fills.</p>
+
+  <p class="exp-label">Finding 4</p>
+  <h3 class="exp">Much of the activity is searching, not progress</h3>
+  <p>Classifying the 10,065 Bash calls by purpose shows that <strong>45.5% gather information</strong>: searching, listing files and reading files through the shell. Code execution is 22.1% and produces the largest outputs. State changing commands are only 8.7% of calls but fail most often, at 14.8% for git operations and 12.5% for package management, and these failures are where retry spirals concentrate. Read is a quarter of all calls but produces 67.8% of all observation characters, because each read averages about 4,400 characters, roughly a whole file.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:620px">
+      <thead><tr><th>Bash purpose</th><th>Share of calls</th><th>Error rate</th></tr></thead>
+      <tbody>
+        <tr><td>Information gathering: search, list, read</td><td class="num">45.5%</td><td class="num">0.5 to 4.4%</td></tr>
+        <tr><td>Execution: run code and scripts</td><td class="num">22.1%</td><td class="num">5.9%</td></tr>
+        <tr><td>State change: git</td><td class="num">2.9%</td><td class="num">14.8%</td></tr>
+        <tr><td>State change: packages</td><td class="num">3.2%</td><td class="num">12.5%</td></tr>
+        <tr><td>Process management</td><td class="num">2.1%</td><td class="num">12.6%</td></tr>
+        <tr><td>Infrastructure: cloud, HTTP, database</td><td class="num">5.7%</td><td class="num">6.6 to 8.6%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 1.</strong> Bash calls by purpose (10,065 calls). Information gathering dominates; state changing commands fail most often.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:620px">
+      <thead><tr><th>Tool</th><th>Share of calls</th><th>Share of context</th><th>Mean chars per call</th></tr></thead>
+      <tbody>
+        <tr><td>Read</td><td class="num">25.5%</td><td class="num">67.8%</td><td class="num">4,433</td></tr>
+        <tr><td>Bash</td><td class="num">44.4%</td><td class="num">25.0%</td><td class="num">910</td></tr>
+        <tr><td>Subagent result</td><td class="num">1.1%</td><td class="num">3.1%</td><td class="num">4,692</td></tr>
+        <tr><td>Edit</td><td class="num">23.6%</td><td class="num">3.0%</td><td class="num">202</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 2.</strong> Where observation characters come from (36.5M characters in total).</p>
+  </div>
+
+  <h2 class="sec">Context churn</h2>
+  <p>The central finding is that these effects do not act independently. They form a loop that feeds itself.</p>
+
+  <figure>
+    <img src="img/churn_cycle.svg" alt="Diagram of the context churn cycle: verbose outputs fill the context, compaction loses file contents, the agent re-reads known files, and delegation adds blind subagents and bloated returns">
+    <figcaption><strong>Figure 5.</strong> The context churn cycle. Verbose outputs (L1) bring compaction sooner; compaction keeps file paths but loses contents (L2); the agent re-reads what it already knew (L3), which fills the context again. Delegation (L4) feeds the loop from the side, with subagents that rediscover the parent's knowledge and return large results.</figcaption>
+  </figure>
+
+  <p class="exp-label">Finding 5</p>
+  <h3 class="exp">Verbose outputs bring compaction sooner</h3>
+  <p>Sessions whose tool results average more than 3,200 characters reach their first compaction after a mean of 52 tool calls; sessions below 1,600 characters last 148. When compaction happens, the per step cost drops 74%, from 159K to 41K tokens, but the context regrows to its previous level within about 30 steps.</p>
+  <figure>
+    <img src="img/churn_f3.svg" alt="Left: high bloat sessions reach compaction after 52 tool calls, low bloat after 148. Right: tokens per step fall from 159K to 41K and cache reads from 154K to 36K at compaction">
+    <figcaption><strong>Figure 6.</strong> (a) Mean tool calls before the first compaction for sessions with large and small tool results. (b) Mean tokens per step in the steps just before and just after a compaction, over 124 compactions. The drop is real but temporary: the context regrows within about 30 steps.</figcaption>
+  </figure>
+
+  <p class="exp-label">Finding 6</p>
+  <h3 class="exp">After compaction, the agent re-reads what it knew</h3>
+  <p>Summaries preserve task intent, file paths and key decisions, but not file contents, exact edit state or user preferences. The agent needs the content, so it reads the files again. Of all file reads, only 25.6% are first reads; 35.3% re-read files still in context, 30.4% verify an edit that already succeeded, and 8.7% recover what compaction lost. An LLM judge reviewing all 124 analysable compactions found that 71.8% trigger recovery work as their main effect, and only 1.6% allow the agent to simply carry on. After compaction the agent uses a mean of 6.6 tools before its first productive action.</p>
+  <figure>
+    <img src="img/churn_f4.svg" alt="Stacked bars: 25.6 percent of reads are first reads, 35.3 percent re-read files still in context, 30.4 percent verify an edit, 8.7 percent follow a compaction. Below, 71.8 percent of compactions lead to recovery work">
+    <figcaption><strong>Figure 7.</strong> (a) Every file read classified by cause; only a quarter bring in new information. (b) The effect of each compaction on the next 15 tool calls, as classified by an LLM judge that inspected the steps on both sides of the boundary.</figcaption>
+  </figure>
+
+  <p class="exp-label">Finding 7</p>
+  <h3 class="exp">The loop gets worse each time around</h3>
+  <p>In sessions with several compactions, the re-read rate climbs from 57% after the first to 88% after the sixth, because the working set grows while the summary budget does not. Each compaction adds about 150 tool calls to a session, and sessions in which four or more churn mechanisms are active average 500 tool calls, against 6 for sessions with none. Each additional active mechanism roughly doubles the tool count.</p>
+  <figure>
+    <img src="img/churn_f5.svg" alt="Line chart: re-read rate after successive compactions, 57 percent after the first, rising to 88 percent after the sixth">
+    <figcaption><strong>Figure 8.</strong> Re-read rate after each successive compaction in sessions with several compactions. The trend is upward, from 57% to a peak of 88% at the sixth; later points rest on few sessions.</figcaption>
+  </figure>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:480px">
+      <thead><tr><th>Active mechanisms</th><th>Sessions</th><th>Mean tool calls</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td class="num">7</td><td class="num">6.3</td></tr>
+        <tr><td>1</td><td class="num">17</td><td class="num">11.0</td></tr>
+        <tr><td>2</td><td class="num">14</td><td class="num">59.1</td></tr>
+        <tr><td>3</td><td class="num">15</td><td class="num">170.2</td></tr>
+        <tr><td>4</td><td class="num">26</td><td class="num">500.2</td></tr>
+        <tr><td>5</td><td class="num">9</td><td class="num">324.9</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 3.</strong> Mean tool calls by the number of churn mechanisms active in a session (redundant reads, compaction, delegation, bloat and spirals).</p>
+  </div>
+
+  <p class="exp-label">Finding 8</p>
+  <h3 class="exp">Delegation starts blind</h3>
+  <p>Only 2.2% of delegations pass any of the parent's knowledge to the subagent, so subagents rediscover what the parent already knew. Results average 5,816 characters, and a quarter exceed 10,000. No delegation ever continued an existing subagent: each one started from scratch.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:520px">
+      <thead><tr><th>Measure</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Delegations that pass any parent context</td><td class="num">2.2%</td></tr>
+        <tr><td>Mean tool calls per subagent</td><td class="num">37.3</td></tr>
+        <tr><td>Subagent reads of files the parent already read</td><td class="num">32.9%</td></tr>
+        <tr><td>Mean result size</td><td class="num">5,816 chars</td></tr>
+        <tr><td>Results over 10,000 chars</td><td class="num">25.8%</td></tr>
+        <tr><td>Delegations that continue an existing subagent</td><td class="num">0</td></tr>
+        <tr><td>Delegations in the first half of a session</td><td class="num">57%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 4.</strong> Delegation to subagents (246 delegation events).</p>
+  </div>
+
+  <h2 class="sec">Humans in the loop</h2>
+  <p>Real sessions are steered continuously. In interactive sessions, users sent one message every 5.2 tool calls on average. About 10.6% of messages are corrections, and each costs a mean of 4.8 tool calls before the agent makes its next productive edit. Corrections are spread evenly across a session and do not change after compaction, which suggests a constant gap between what the user means and what the agent understands. The agent asks good questions when it does ask, but it asks rarely and not more often when it is stuck; it retries instead.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:560px">
+      <thead><tr><th>Measure</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>User messages per session (mean)</td><td class="num">50</td></tr>
+        <tr><td>Tool calls per user message</td><td class="num">5.2</td></tr>
+        <tr><td>Messages that are corrections</td><td class="num">10.6%</td></tr>
+        <tr><td>Tool calls before the next edit after a correction</td><td class="num">4.8</td></tr>
+        <tr><td>Tool calls before the first fix after an error report</td><td class="num">6.6</td></tr>
+        <tr><td>Corrections recovered within 3 tools</td><td class="num">79%</td></tr>
+        <tr><td>Corrections only partly incorporated</td><td class="num">73%</td></tr>
+        <tr><td>Sessions that ever ask the user a question</td><td class="num">43%</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 5.</strong> How users steer sessions. Interruption types are LLM classified (123 interruptions); recovery is judged on 40 corrections.</p>
+  </div>
+  <p>Sessions are also tree shaped. Most new messages extend or branch the current task, and only 1.6% of transitions start an unrelated one. Task difficulty, rated by an LLM judge, predicts cost strongly: very hard sessions use about 190&times; more tokens than easy ones, both because they are longer and because each turn is more expensive. Scope, the number of files and systems involved, is the strongest single predictor (Spearman &rho; = 0.83).</p>
+  <figure>
+    <img src="img/churn_topics.svg" alt="Left: next user message is same topic 32 percent, follow up 29 percent, branch 22 percent, correction 14 percent, new task 1.6 percent. Right: heatmap of transition probabilities">
+    <figcaption><strong>Figure 9.</strong> (a) What each new user message does, across 504 LLM labelled transitions. (b) The probability of each kind of transition given the previous one. Returns lead back to the same topic (0.45), branches are followed by more work on the same topic (0.35), and corrections are as likely to be followed by another correction (0.25) as by anything else.</figcaption>
+  </figure>
+  <p>The transition structure shows how scope grows. After a branch, the next message most often continues the same line. After a return to an earlier topic, the session usually stays there. Corrections cluster: a quarter are followed directly by another correction, and 67 episodes contain two or more in a row, a sign that the agent has misunderstood the task rather than made a small slip.</p>
+
+  <h2 class="sec">Is this specific to one agent?</h2>
+  <p class="exp-label">Finding 9</p>
+  <h3 class="exp">The same signatures appear in 318K autonomous runs</h3>
+  <p>SWE-Zero trajectories come from a different framework, a different model and no human interaction, yet the behaviour matches closely.</p>
+  <div class="table-wrap">
+    <table class="post-table" style="max-width:560px">
+      <thead><tr><th>Metric</th><th>Interactive</th><th>SWE-Zero (318K)</th></tr></thead>
+      <tbody>
+        <tr><td>Median steps</td><td class="num">67</td><td class="num">67</td></tr>
+        <tr><td>Files read per file edited</td><td class="num">4.2&times;</td><td class="num">5.6&times;</td></tr>
+        <tr><td>Sessions with re-reads</td><td class="num">99.6%</td><td class="num">99.6%</td></tr>
+        <tr><td>Mean re-reads per session</td><td class="num">&#8776; 9</td><td class="num">9.0</td></tr>
+        <tr><td>Mean observation size (chars)</td><td class="num">1,907</td><td class="num">1,877</td></tr>
+      </tbody>
+    </table>
+    <p class="table-cap"><strong>Table 6.</strong> Behavioural signatures of interactive sessions and autonomous SWE-Zero trajectories.</p>
+  </div>
+  <p>Because SWE-Zero runs never compact, the re-reads there cannot come from lost state. Agents re-read files even within a single context window, which points to churn as a structural property of how tool using agents navigate code, and to fixes that target how information enters and leaves the context.</p>
+
+  <h2 class="sec">What helps</h2>
+  <p class="exp-label">Experiment</p>
+  <h3 class="exp">Four lightweight mitigations, by trace replay</h3>
+  <p>We replayed the tool active sessions under four counterfactual policies, none of which needs changes to the agent's architecture. <strong>Working set persistence</strong> keeps the most read files across compaction. <strong>Bounded outputs</strong> cap every tool result. <strong>Delegation context packets</strong> pass the parent's file history to each subagent. <strong>Retry circuit breakers</strong> stop after three identical commands or five identical reads.</p>
+
+  <figure>
+    <img src="img/churn_mitigations.svg" alt="Bar chart of mitigation results: working set persistence avoids 62.4 percent of re-reads, bounded outputs save 63.4 percent of context, delegation packets make 32.9 percent of subagent reads avoidable, circuit breakers remove 23.8 percent of tool calls">
+    <figcaption><strong>Figure 10.</strong> Effect of each mitigation in trace replay. Persisting the ten most read files avoids 62.4% of post compaction re-reads; capping tool outputs at 2K characters saves 63.4% of the context consumed before the first compaction; passing the parent's file history makes 32.9% of subagent reads avoidable; circuit breakers remove 23.8% of tool calls in sessions with spirals.</figcaption>
+  </figure>
+
+  <p>Timing matters too. When compaction finally triggers, 99.5% of the context was carried over from earlier turns, including topics the session has already left behind and will not return to. Simulating compaction at half the window instead of a full window would save <strong>47% of cumulative input tokens</strong>.</p>
+  <p>Recent work shows that simple observation masking can match LLM summarisation for managing agent context<a class="cite-ref" href="#ref-6">[6]</a>, and that compression can be optimised for long horizon agents<a class="cite-ref" href="#ref-7">[7]</a>. The results here point one step earlier. <strong>The largest opportunity is not better compression but less to compress</strong>: deciding what enters the context, what persists across a reset, what is handed to a subagent and what is dropped.</p>
+
+  <section class="endmatter">
+    <h4>Citation</h4>
+    <p>Please cite this post as</p>
+    <div class="copybox plain"><button class="copy-btn" type="button">Copy</button><pre>Paul Trust. &ldquo;Where do the tokens go? Context churn in real world LLM agent sessions.&rdquo; April 2026. https://paultrust26.github.io/paultrust/blog/context-churn.html</pre></div>
+    <p>or in BibTeX</p>
+    <div class="copybox"><button class="copy-btn" type="button">Copy</button><pre>@misc{trust2026contextchurn,
+  title        = {{Where do the tokens go? Context churn in real world LLM agent sessions}},
+  author       = {Trust, Paul},
+  year         = {2026},
+  month        = apr,
+  howpublished = {\url{https://paultrust26.github.io/paultrust/blog/context-churn.html}},
+  note         = {Blog post}
+}</pre></div>
+
+    <h4>References</h4>
+    <ol class="refs">
+      <li id="ref-1"><span class="rt">How Do AI Agents Spend Your Money? Analyzing and Predicting Token Consumption in Agentic Coding Tasks</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2604.22750">[PDF]</a><span class="ra">Bai, L., Huang, Z., Wang, X., Sun, J., Mihalcea, R., Brynjolfsson, E., Pentland, A. and Pei, J., 2026. arXiv preprint arXiv:2604.22750.</span></li>
+      <li id="ref-2"><span class="rt">Tokenomics: Quantifying Where Tokens Are Used in Agentic Software Engineering</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2601.14470">[PDF]</a><span class="ra">Salim, M., Latendresse, J., Khatoonabadi, S. and Shihab, E., 2026. arXiv preprint arXiv:2601.14470.</span></li>
+      <li id="ref-3"><span class="rt">SWE-Effi: Re-Evaluating Software AI Agent System Effectiveness Under Resource Constraints</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2509.09853">[PDF]</a><span class="ra">Fan, Z., Vasilevski, K., Lin, D., Chen, B., Chen, Y., Zhong, Z., Zhang, J.M., He, P. and Hassan, A.E., 2025. arXiv preprint arXiv:2509.09853.</span></li>
+      <li id="ref-4"><span class="rt">The Price Reversal Phenomenon: When Cheaper Reasoning Models Cost More</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2603.23971">[PDF]</a><span class="ra">Chen, L., Zhang, C., He, Y., Stoica, I., Zaharia, M. and Zou, J., 2026. arXiv preprint arXiv:2603.23971.</span></li>
+      <li id="ref-5"><span class="rt">SWE-Zero: Execution-free Fine-tuning for Software Engineering Agents</span><span class="ra">NVIDIA, 2026. Hugging Face dataset of 318K OpenHands trajectories on 118K GitHub issues.</span></li>
+      <li id="ref-6"><span class="rt">The Complexity Trap: Simple Observation Masking Is as Efficient as LLM Summarization for Agent Context Management</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2508.21433">[PDF]</a><span class="ra">Lindenbauer, T., Slinko, I., Felder, L., Bogomolov, E. and Zharov, Y., 2025. Deep Learning for Code Workshop (DL4C) at NeurIPS.</span></li>
+      <li id="ref-7"><span class="rt">ACON: Optimizing Context Compression for Long-horizon LLM Agents</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2510.00615">[PDF]</a><span class="ra">Kang, M., Chen, W.N., Han, D., Inan, H.A., Wutschitz, L., Chen, Y., Sim, R. and Rajmohan, S., 2026. International Conference on Machine Learning (ICML).</span></li>
+      <li id="ref-8"><span class="rt">Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters</span><a class="rl" target="_blank" rel="noopener" href="https://arxiv.org/pdf/2408.03314">[PDF]</a><span class="ra">Snell, C., Lee, J., Xu, K. and Kumar, A., 2024. arXiv preprint arXiv:2408.03314.</span></li>
+    </ol>
+  </section>
+</article>
+
+<footer class="foot">
+  <div class="wrap">&copy; 2026 Paul Trust</div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = b.parentElement.querySelector('pre').innerText;
+    try { navigator.clipboard.writeText(t); b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); } catch (e) {}
+  });
+});
+</script>
+</body>
+</html>
